@@ -1,0 +1,32 @@
+name: Sync Overleaf Research Log
+
+on:
+  schedule:
+    - cron: '0 * * * *' 
+  workflow_dispatch:    
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout MATH8701
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clone Overleaf repo
+        run: |
+          git clone https://github.com/freezingss/Research-Log-Latex.git temp-overleaf
+
+      - name: Copy files to subfolder
+        run: |
+          mkdir -p ResearchLog
+          cp -r temp-overleaf/* ResearchLog/
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add ResearchLog/
+          git diff --staged --quiet || git commit -m "Auto-sync from Overleaf"
+          git push

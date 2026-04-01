@@ -16,7 +16,8 @@ jobs:
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: "Research Log/main.tex"
+          root_file: main.tex
+          working_directory: "Research Log"
 
       - name: Move PDF to Research Log folder
         run: mv main.pdf "Research Log/main.pdf"

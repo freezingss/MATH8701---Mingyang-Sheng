@@ -20,7 +20,7 @@ jobs:
           working_directory: "Research Log"
 
       - name: Move PDF to Research Log folder
-        run: mv main.pdf "Research Log/main.pdf"
+        run: echo "PDF already in Research Log folder"
 
       - name: Commit and push PDF
         run: |

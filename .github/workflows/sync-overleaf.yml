@@ -20,13 +20,13 @@ jobs:
 
       - name: Copy files to subfolder
         run: |
-          mkdir -p ResearchLog
-          cp -r temp-overleaf/* ResearchLog/
+          mkdir -p Research Log
+          cp -r temp-overleaf/* Research Log/
 
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add ResearchLog/
+          git add Research Log/
           git diff --staged --quiet || git commit -m "Auto-sync from Overleaf"
           git push

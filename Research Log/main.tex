@@ -1,0 +1,136 @@
+\documentclass[]{article}
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+%\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[a4paper, margin=1in]{geometry}
+% Useful packages
+\setcounter{secnumdepth}{-1}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{bbm}
+\usepackage{graphicx}
+\usepackage{subcaption} 
+\usepackage{array}
+\bibliographystyle{plain}
+\usepackage{float}
+\usepackage{lipsum} % For dummy text
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+%opening
+% \title{Random effects for high-dimensional correlated multinomial regression}
+
+\begin{document}
+	
+	\thispagestyle{empty}
+	
+	\section{Introduction}
+	
+	Grouped count data arise naturally in many applied settings. In consumer behaviour research, households make repeated purchases across a large number of product categories; in agriculture, field plots are observed repeatedly across seasons with counts recorded for different seed varieties. In both cases, the data share a common structure. Observations are grouped, counts are recorded across $Q$ categories and within-group dependence is an intrinsic feature of the data.
+	
+	The multinomial distribution provides a natural model for such data, but direct estimation is computationally prohibitive when $Q$ is large. Taddy (2015) addressed this through the Distributed Multinomial Regression (DMR) framework, which exploits the exact Poisson–Multinomial factorisation
+	
+	\begin{equation}
+		\prod_{q=1}^{Q}P(z_{q};\mu_{q})=P(S;\sum_{q}\mu_{q})\cdot M(z;p,S)
+	\end{equation}
+	to decompose the multinomial regression into $Q$ independent Poisson regressions that can be solved in parallel. Lee, Green and Ryan (2017) extended DMR to grouped data by introducing group-level random effects $\lambda_{j}$, accommodating within-group dependence while retaining the Poisson surrogate structure. However, their model assumes $\lambda_{jq}$ to be independent across categories $q$, which rules out the cross-category correlation that is pervasive in high-dimensional settings. 
+
+	\section{Model Specification}
+	
+	\subsection{Data Structure and Notation}
+	
+	Setup.
+	
+	\begin{itemize}
+		\item $j=1,2,\dots ,J$: index of groups
+		\item $i=1,2,\dots ,n_{j}$: index of observation within group $j$
+		\item $Q$: number of ``classification" corresponding to the response Q-dimensional count vector $Y_{ij}=(Y_{ij1},\dots , Y_{ijQ})^{T}\in \mathbb{Z}^{Q}_{\geq 0}$, where $Y_{ijq}$ denotes the count of category $q$ 
+		\item $p$: number of covariates
+		\item $v_{ij}$: covariate vector, where $v_{ij}\in \mathbb{R}^{p}$
+		\item $\delta_{ij}$: known positive scalar offset
+	\end{itemize}
+	
+	and define the following quantities:
+	\begin{equation}
+		Y_{ij+}=\sum_{q=1}^{Q}Y_{ijq} \qquad Y_{+jq}=\sum_{i=1}^{n_{j}}Y_{ijq} \qquad Y_{j++}=\sum_{i=1}^{n_{j}}\sum_{q=1}^{Q}Y_{ijq}
+	\end{equation}
+	denoting the observation-level total, the group-category total and the group-level grand total respectively. The total number of observations across all groups is $N=\sum_{j=1}^{J}n_{j}$.
+	
+	\subsection{The Poisson-Multinomial Equivalence}
+	
+	\begin{lemma}[Poisson-Multinomial Factorisation]\label{PMF}
+		Let $Z_{1},\dots ,Z_{Q}$ be independent with $Z_{q}\sim P(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{T}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
+		\begin{equation}
+			p(Z_{1}=z_{1},\dots ,Z_{Q}=z_{Q})=P(S=s;\mu_{+})\cdot M(z;p,s)
+		\end{equation}
+		where $s=\sum_{q=1}^{Q}z_{q}$, $P(\sim ;\mu_{+})$ denotes the Poisson probability mass function with poisson parameter $\mu_{+}$ and $M(\sim ;p,s)$ denotes the multinomial probability mass function given total $s$ and probability vector $p$.
+	\end{lemma}
+	
+	\begin{proof}
+		Since $Z_{1},\dots ,Z_{Q}$ are independent with $Z_{q}\sim P(\mu_{q})$, by direct computation:
+		\begin{equation}
+			\prod_{q=1}^{Q} \frac{e^{-\mu_{q}}\mu_{q}^{z_{q}}}{z_{q}!}=e^{-\mu_{+}}\cdot \frac{\mu_{+}^{s}}{s!}\cdot \frac{s!}{\prod_{q=1}^{Q}z_{q}!} \prod_{q=1}^{Q}(\frac{\mu_{q}}{\mu_{+}})^{z_{q}}= P(s;\mu_{+})\cdot M(z;p,s).
+		\end{equation}
+	\end{proof}
+	
+	This factorisation is exact and holds for all $(z_{1},\dots ,z_{Q})\in \mathbb{Z}^{Q}_{\geq 0}$. 
+	
+	\begin{remark}
+		Lemma has an important implication for inference. 
+	\end{remark}
+	
+	\subsection{Conditional Model Given Random Effects}
+	To discuss with-in group dependence, we introduce a Q-dimensional vector of group-specific random effects $\lambda_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{T}$, where $\lambda_{jq}>0$ represents the multiplicative deviation of group $j$'s baseline intensity for category $q$ from the population average. Conditional on $\lambda_{j}$, we assume that all counts within group $j$ are independent:
+	\begin{equation}\label{conditional}
+		Y_{ijq}|\lambda_{j} \sim P(\delta_{ij}\lambda_{jq}\zeta_{ijq}), i=i,\dots ,n_{j}, q=1,\dots ,Q
+	\end{equation}
+	where the fixed-effect component of the conditional mean is:
+	\begin{equation}
+		\zeta_{ijq}=\exp(v_{ij}^{T}\phi_{q})
+	\end{equation}
+	and $\phi_{q}\in \mathbb{R}^{p}$ is a vector of regression coefficients for category $q$. The random effect $\lambda_{jq}$ captures the persistent tendency of group $j$ toward category $q$ that is not explained by the observed covariates $v_{ij}$. Observations within the same group share one same $\lambda_{j}$, which induces within-group dependence even after conditioning on covariates.
+	\begin{remark}[Conditional Poisson-Multinomial Equivalence]
+		By Lemma \ref{PMF} applied conditionally, model \ref{conditional} implies that:
+		\begin{equation}
+			Y_{ij}|Y_{ij+}, \lambda_{j}\sim M(Y_{ij+},p_{ij}), \text{ where } p_{ijq}=\dfrac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}
+		\end{equation}
+		and simultaneously:
+		\begin{equation}
+			Y_{ij+}|\lambda_{j}\sim P(\delta_{ij}\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}).
+		\end{equation}
+	\end{remark} 
+	
+	The Poisson–Multinomial equivalence therefore holds exactly at the conditional level, given $\lambda_{j}$. The multinomial probability vector $p_{ij}$ depends on $\lambda_{j}$ only through the ratios $\frac{\lambda_{jq}}{\sum_{q}\lambda_{jq}}$, so the random effects act as multiplicative modulation of the category probabilities that varies across groups but remains constant within a group across observations.
+	
+	\subsection{Factor-Structured Random Effects}
+	The cross-category correlation is driven by common latent factors rather than being independently determined for each category. We proposes a factor-structured random effects model of $\lambda_{j}$ across groups. Under the independence assumption of Lee et al.(2017), $\lambda_{jq}$ are independent across $q$, so the cross-category covariance of $\lambda_{j}$ is diagonal. This assumption becomes increasingly restrictive as $Q$ grows, since it rules out the systematic co-variation of preferences across categories that is typical in high-dimensional count data. We relax this assumption by modelling the log-transformed random effects through a latent factor model:
+	\begin{equation}
+		\log \lambda_{j}=\mu+Bf_{j}+\epsilon_{j}
+	\end{equation}
+	where the components are defined as follows. The vector $\mu=(\mu_{1},\dots ,\mu_{Q})^{T}\in \mathbb{R}^{Q}$ denotes the population-level baseline log-intensities for each category, the matrix $\mathbf{B}=[b_{1},\dots ,b_{K}]\in \mathbb{R}^{Q\times K}$ is the factor loading matrix with $K\ll Q$ and its entries $B_{qk}$ denotes the sensitivity of category $q$'s random effect to the $k$-th latent factor. The vector $f_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores assumed as follows, distributed identically and independently:
+	\begin{equation}
+		f_{j}\sim N_{K}(0,I_{K})
+	\end{equation}
+	
+	The vector $\epsilon_{j}\in \mathbb{R}^{Q}$ denotes the error term capturing category-specific variation in $\lambda_{j}$ that is not attributable to the K common factors:
+	\begin{equation}
+		\epsilon_{j}\sim N_{Q}(0,D), \quad D=\text{diag}(d_{1}^{2},\dots d_{Q}^{2})
+	\end{equation} 
+	with $f_{j}\perp \epsilon_{j}$ for all $j$. Then the marginal distribution of $\log \lambda_{j}$ is:
+	\begin{equation}
+		\log \lambda_{j}\sim N_{Q}(\mu, \Sigma),\quad \Sigma=BB^{T}+D
+	\end{equation}
+	% \bibliography{sample}
+	
+\end{document}

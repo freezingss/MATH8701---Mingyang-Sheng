@@ -55,7 +55,7 @@
 	\subsection{Correlated Multinomial Responses}
 	Consider a set of observations which fall into a collection of $J$ groups and let $\lambda_{jq}$ denotes the vector-valued random effect for group $j$. Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
 	
-\begin{comment}
+
 	\begin{itemize}
 		\item $j=1,2,\dots ,m$: index of groups
 		\item $i=1,2,\dots ,n$: index of observation within group $j$
@@ -64,7 +64,7 @@
 		\item $v_{ij}$: covariate vector, where $v_{ij}\in \mathbb{R}^{p}$
 		\item $\delta_{ij}$: known positive scalar offset
 	\end{itemize}
-\end{comment}
+
 	
 	and define the following quantities:
 	\begin{equation}
@@ -74,7 +74,7 @@ denoting the observation-level total, the group-category total and the group-lev
 	
 	\subsection{The Poisson-Multinomial Equivalence}
 	\begin{lemma}[Poisson-Multinomial Factorisation]\label{PMF}
-		Let $Z_{1},\dots ,Z_{Q}$ be independent with $Z_{q}\sim \mathcal{P}(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{T}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
+		Let $Z_{1},\dots ,Z_{Q}$ be independent with $Z_{q}\sim \mathcal{P}(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{\top}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
 		\begin{equation}
 			p(Z_{1}=z_{1},\dots ,Z_{Q}=z_{Q})=\mathcal{P}(S=s;\mu_{+})\cdot \mathcal{M}(z;p,s)
 		\end{equation}
@@ -93,13 +93,13 @@ denoting the observation-level total, the group-category total and the group-lev
 	\end{remark}
 	
 	\subsection{Conditional Model Given Random Effects}
-	To discuss with-in group dependence, we introduce a Q-dimensional vector of group-specific random effects $\lambda_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{T}$, where $\lambda_{jq}>0$ represents the multiplicative deviation of group $j$'s baseline intensity for category $q$ from the population average. Conditional on $\lambda_{j}$, we assume that all counts within group $j$ are independent:
+	To discuss with-in group dependence, we introduce a Q-dimensional vector of group-specific random effects $\lambda_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{\top}$, where $\lambda_{jq}>0$ represents the multiplicative deviation of group $j$'s baseline intensity for category $q$ from the population average. Conditional on $\lambda_{j}$, we assume that all counts within group $j$ are independent:
 	\begin{equation}\label{conditional}
 		Y_{ijq}|\lambda_{j} \sim \mathcal{P}(\delta_{ij}\lambda_{jq}\zeta_{ijq}), i=i,\dots ,n_{j}, q=1,\dots ,Q
 	\end{equation}
 where the fixed-effect component of the conditional mean is:
 	\begin{equation}
-		\zeta_{ijq}=\exp(v_{ij}^{T}\phi_{q})
+		\zeta_{ijq}=\exp(v_{ij}^{\top}\phi_{q})
 	\end{equation}
 and $\phi_{q}\in \mathbb{R}^{p}$ is a vector of regression coefficients for category $q$. The random effect $\lambda_{jq}$ captures the persistent tendency of group $j$ toward category $q$ that is not explained by the observed covariates $v_{ij}$. Observations within the same group share one same $\lambda_{j}$, which induces within-group dependence even after conditioning on covariates.
 	\begin{remark}[Conditional Poisson-Multinomial Equivalence]
@@ -139,23 +139,83 @@ which does not generally exhibit a closed-form solution regardless of the random
 \end{comment}
   
 	\subsection{Factor-Structured Random Effects}
-	The cross-category correlation is driven by common latent factors rather than being independently determined for each category. We proposes a factor-structured random effects model of $\boldsymbol{\lambda}_{j}$ across groups. Under the independence assumption of Lee et al.(2017), $\lambda_{jq}$ are independent across $q$, so the cross-category covariance of $\boldsymbol{\lambda}_{j}$ is diagonal. This assumption becomes increasingly restrictive as $Q$ grows, since it rules out the systematic co-variation of preferences across categories that is typical in high-dimensional count data. We relax this assumption by modelling the log-transformed random effects through a latent factor model:
+	The cross-category correlation is driven by common latent factors rather than being independently determined for each category. We proposes a factor-structured random effects model of $\boldsymbol{\lambda}_{j}$ across groups.  $\lambda_{jq}$ are independent across $q$, so the cross-category covariance of $\boldsymbol{\lambda}_{j}$ is diagonal. This assumption becomes increasingly restrictive as $Q$ grows, since it rules out the systematic co-variation of preferences across categories that is typical in high-dimensional count data. We relax this assumption by modelling the log-transformed random effects through a latent factor model:
 	\begin{equation}
 		\log \boldsymbol{\lambda}_{j}=\boldsymbol{\mu}+\mathbf{B}\boldsymbol{f}_{j}+\boldsymbol{\epsilon}_{j}
 	\end{equation}
-	where the components are defined as follows. The vector $\boldsymbol{\mu}=(\mu_{1},\dots ,\mu_{Q})^{T}\in \mathbb{R}^{Q}$ denotes the population-level baseline log-intensities for each category, the matrix $\mathbf{B}=[\boldsymbol{b}_{1},\dots ,\boldsymbol{b}_{K}]\in \mathbb{R}^{Q\times K}$ is the factor loading matrix with $K\ll Q$ and its entries $\mathbf{B}_{qk}$ denote the sensitivity of category $q$'s random effect to the $k$-th latent factor. The vector $\boldsymbol{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores assumed as follows, distributed identically and independently:
+	where the components are defined as follows. The vector $\boldsymbol{\mu}=(\mu_{1},\dots ,\mu_{Q})^{\top}\in \mathbb{R}^{Q}$ denotes the population-level baseline log-intensities for each category, the matrix $\mathbf{B}=[\boldsymbol{b}_{1},\dots ,\boldsymbol{b}_{K}]\in \mathbb{R}^{Q\times K}$ is the factor loading matrix with $K\ll Q$ and its entries $\mathbf{B}_{qk}$ denote the sensitivity of category $q$'s random effect to the $k$-th latent factor. The vector $\boldsymbol{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores assumed as follows, distributed identically and independently:
 	\begin{equation}
 		\boldsymbol{f}_{j}\sim \mathcal{N}_{K}(0,\mathbf{I}_{K})
 	\end{equation}
-	
 	The vector $\boldsymbol{\epsilon}_{j}\in \mathbb{R}^{Q}$ denotes the error term capturing category-specific variation in $\boldsymbol{\lambda}_{j}$ that is not attributable to the K common factors:
 	\begin{equation}
 		\boldsymbol{\epsilon}_{j}\sim \mathcal{N}_{Q}(0,\mathbf{D}), \quad \mathbf{D}=\text{diag}(d_{1}^{2},\dots d_{Q}^{2})
 	\end{equation} 
 	with $\boldsymbol{f}_{j}\perp \boldsymbol{\epsilon}_{j}$ for all $j$. Then the marginal distribution of $\log \boldsymbol{\lambda}_{j}$ is:
 	\begin{equation}
-		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{T}+\mathbf{D}
+		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{\top}+\mathbf{D}
 	\end{equation}
+    \begin{proof}
+Under the latent factor model,
+\[
+\log \boldsymbol{\lambda}_j \mid \mathbf{f}_j
+=
+\boldsymbol{\mu} + \mathbf{B}\mathbf{f}_j + \boldsymbol{\varepsilon}_j,
+\qquad
+\boldsymbol{\varepsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D}),
+\]
+so that
+\[
+\log \boldsymbol{\lambda}_j \mid \mathbf{f}_j
+\sim \mathcal{N}_Q(\boldsymbol{\mu}+\mathbf{B}\mathbf{f}_j, \mathbf{D}).
+\]
+
+By the law of total expectation,
+\[
+\mathbb{E}(\log \boldsymbol{\lambda}_j)
+=
+\mathbb{E}\!\left[\mathbb{E}(\log \boldsymbol{\lambda}_j\mid \mathbf{f}_j)\right]
+=
+\boldsymbol{\mu}+\mathbf{B}\mathbb{E}(\mathbf{f}_j)
+=
+\boldsymbol{\mu},
+\]
+where \(\mathbb{E}(\mathbf{f}_j)=\mathbf{0}\).
+
+By the law of total variance,
+\[
+\operatorname{Var}(\log \boldsymbol{\lambda}_j)
+=
+\mathbb{E}\!\left[\operatorname{Var}(\log \boldsymbol{\lambda}_j\mid \mathbf{f}_j)\right]
++
+\operatorname{Var}\!\left[\mathbb{E}(\log \boldsymbol{\lambda}_j\mid \mathbf{f}_j)\right]
+=
+\mathbf{D}+\mathbf{B}\mathbf{B}^{\top},
+\]
+since \(\operatorname{Var}(\mathbf{f}_j)=\mathbf{I}_K\).
+
+Hence the covariance matrix has the factor-analytic form
+\[
+\mathbf{\Sigma}=\mathbf{D}+\mathbf{B}\mathbf{B}^{\top}.
+\]
+
+For two distinct categories \(q\) and \(q'\),
+\[
+\log \lambda_{jq}-\mu_q=\mathbf{b}_q^T\mathbf{f}_j+\varepsilon_{jq},
+\quad
+\log \lambda_{jq'}-\mu_{q'}=\mathbf{b}_{q'}^T\mathbf{f}_j+\varepsilon_{jq'}.
+\]
+Therefore,
+\[
+\operatorname{Cov}(\log \lambda_{jq},\log \lambda_{jq'})
+=
+\mathbf{b}_q^T\operatorname{Var}(\mathbf{f}_j)\mathbf{b}_{q'}
+=
+\mathbf{b}_q^T\mathbf{b}_{q'},
+\]
+where we use the independence between \(\mathbf{f}_j\) and \(\boldsymbol{\varepsilon}_j\), together with the fact that \(D\) is diagonal.
+\end{proof}
+\begin{comment}
     \begin{proof}
     The latent factor model given $f_{j}$ contains only one random variable $\epsilon_{j}$, that is, 
     \begin{equation*}
@@ -170,9 +230,10 @@ which does not generally exhibit a closed-form solution regardless of the random
     Var(\log \lambda_{j})=\mathbb{E}[Var(\log \lambda_{j}|f_{j})]+Var(\mathbb{E}[\log \lambda_{j}|f_{j}])=D+BB^{T}
     \end{equation*}
     \end{proof}
-    The covariance matrix $\Sigma$ has a factor-analytic structure. The rank-$K$  positive semi-definite matrix $BB^{T}$  captures the cross-category covariation of $\log \lambda_{j}$  driven by $K$  shared latent processes, and the matrix $D$  captures the residual category-specific variation. The cross-category covariance between two different categories has the following property:
+\end{comment}
+    The covariance matrix $\Sigma$ has a factor-analytic structure. The rank-$K$  positive semi-definite matrix $\mathbf{B}\mathbf{B}^{\top}$  captures the cross-category covariation of $\log \lambda_{j}$  driven by $K$  shared latent processes, and the matrix $\mathbf{D}$  captures the residual category-specific variation. The cross-category covariance between two different categories has the following property:
     \begin{equation}
-    Cov(\log \lambda_{jq}, \log \lambda_{jq^{'}})=b_{q}^{T}b_{q^{'}}
+    \operatorname{Cov}(\log \lambda_{jq}, \log \lambda_{jq^{'}})=\mathbf{b}_q^T\mathbf{b}_{q'}
     \end{equation}
 which is nonzero whenever categories $q$  and $q^{'}$  share the common factor loading.
 \begin{proof}
@@ -180,14 +241,21 @@ which is nonzero whenever categories $q$  and $q^{'}$  share the common factor l
 \[\log \lambda_{jq}-\mu_{q}=b^{T}_{q}f_{j}+\epsilon_{jq}\]
 \[\log \lambda_{jq^{'}}-\mu_{q^{'}}=b^{T}_{q^{'}}f_{j}+\epsilon_{jq^{'}}\]
     Thus, the covariance is calculated by
-\begin{align*}
-    Cov(\log \lambda_{jq}, \log \lambda_{jq^{'}}) &= \mathbb{E}[(b_{q}^{T}f_{j}+\epsilon_{jq})(b_{q^{'}}^{T}f_{j}+\epsilon_{jq^{'}})] \\
-    &= b_{q}^{T}\mathbb{E}[f_{j}f_{j}^{T}]b_{q^{'}}+b_{q}^{T}\mathbb{E}[f_{j}]\mathbb{E}[\epsilon_{jq^{'}}]+b_{q^{'}}^{T}\mathbb{E}[f_{j}]\mathbb{E}[\epsilon_{jq}]+\mathbb{E}[\epsilon_{jq}\epsilon_{jq^{'}}] \\
-    &= b_{q}^{T}b_{q^{'}}
-\end{align*}
+\[
+\begin{aligned}
+\operatorname{Cov}\!\bigl(\log \lambda_{jq}, \log \lambda_{jq'}\bigr)
+&= \mathbb{E}\Bigl[\bigl(\mathbf{b}_q^{T}\mathbf{f}_j + \varepsilon_{jq}\bigr)
+\bigl(\mathbf{b}_{q'}^{T}\mathbf{f}_j + \varepsilon_{jq'}\bigr)\Bigr] \\
+&= \mathbf{b}_q^{T}\,\mathbb{E}\!\bigl[\mathbf{f}_j \mathbf{f}_j^{T}\bigr]\mathbf{b}_{q'}
+ + \mathbf{b}_q^{T}\,\mathbb{E}\!\bigl[\mathbf{f}_j\bigr]\mathbb{E}\!\bigl[\varepsilon_{jq'}\bigr]
+ + \mathbf{b}_{q'}^{T}\,\mathbb{E}\!\bigl[\mathbf{f}_j\bigr]\mathbb{E}\!\bigl[\varepsilon_{jq}\bigr]
+ + \mathbb{E}\!\bigl[\varepsilon_{jq}\varepsilon_{jq'}\bigr] \\
+&= \mathbf{b}_q^{\top}\mathbf{b}_{q'} .
+\end{aligned}
+\]
 since we assume  $f_{j}\perp \epsilon_{j}$  for all $j$ . 
 \end{proof}
-When $B=0$, the model reduces to independent log-normal random effects with $\Sigma=D$, which is the special case considered by $\cite{Lee2019AnalysisOG}$ under a Gamma distributional assumption. 
+When $\mathbf{B}=\mathbf{0}$, the model reduces to independent log-normal random effects with $\mathbf{\Sigma}=\mathbf{D}$, which is the special case considered by $\cite{Lee2019AnalysisOG}$ under a Gamma distributional assumption. 
 
 
 \newpage
@@ -200,6 +268,26 @@ When $B=0$, the model reduces to independent log-normal random effects with $\Si
 This section contains some results from article \cite{chiquet2018variational}. Principal component analysis (PCA) for multivariate analysis aims at reducing the dimension of a large dataset made of continuous variables. The methodology exploits the dependency structure between the variables to exhibit the few synthetic variables that best summarize the information content of the whole dataset, the principal components. 
 For statistical purposes, PCA can be cast in a probabilistic framework. Probabilistic PCA (pPCA) is a model-based version of PCA originally defined in a Gaussian setting in which the scores are treated as random hidden variables. As it involves hidden variables, maximum-likelihood estimates (MLE) can be obtained via an EM algorithm
 \end{comment}
+
+\newpage
+\section{Logistic Normal Multinomial Factor Analyzers for Clustering Microbiome Data \cite{Tu2023}}
+\subsection{Introduction}
+Logistic normal multinomial mixture model (LMM-MM) was proposed for clustering microbiome data and a family of logistic normal multinomial factor analyzers (LNM-FA) was proposed by incorporating a factor analyzer structure in LNM-MM for high-dimensional dataset as the number of free parameters in LNM-FA can be greatly reduced by assuming that the number of latent factor is small.
+Using Euclidean geometry on such compositional datasets is not appropriate, when the compositional vectors are added or multiplied, the results may end up outside the simplex and Euclidean difference does not reveal the true difference in relative abundance. Therefore, it is important to take into account the compositional nature of the data. 
+A natural choice for modelling the compositional data is a multinomial model with parameter $\boldsymbol{p}_{ij}=(p_{ij1},\cdots,p_{ijQ})^{\top}$, which denotes the probability vector for the observation $i$ in group $j$.  
+
+\subsection{Methodology}
+\subsubsection{The Map from Simplex to $\mathbb{R}^{Q}$}
+For each observation, the probability vector $\boldsymbol{p}_{ij}$ is restricted by the constraint $\sum_{q=1}^{Q}p_{ijq}=1$, $p_{ijq}>0$, which do not allow us to use any other distribution in this space. Therefore, a map is necessary from the restricted space to open real space $\mathbb{R}^{Q}$. Thus, an additive log-ratio (ALR) transformation is utilized to map $\boldsymbol{p}$ from the restricted simplex $\mathbb{S}^{Q}$ to a K-dimensional open real space $\mathbb{R}^{Q}$ such that
+\begin{equation}
+\boldsymbol{W}=\phi(\boldsymbol{p})=\Bigl[\log \Bigl(\dfrac{p_{1}}{p_{Q}}\Bigr),\cdots , \log \Bigl(\dfrac{p_{Q-1}}{p_{Q}}\Bigr)\Bigr]^{\top},
+\end{equation}
+where $p_{Q}$ is used as a reference and a multivariate Gaussian distribution is imposed with mean $\boldsymbol{\mu}$ and covariance $\boldsymbol{\Sigma}$ on $\boldsymbol{W}$. Here $\phi: (0,1)^{Q} \to \mathbb{R}^{Q}$ is a one-to-one function, therefore,
+\begin{equation}
+\boldsymbol{p}=\phi^{-1}(\boldsymbol{W})=\Bigl[ \dfrac{\exp{(W_{1})}}{\sum_{q=1}^{Q}\exp{(W_{k})}+1},\cdots , \dfrac{\exp{(W_{k})}}{\sum_{q=1}^{Q}\exp{(W_{k})}+1}\Bigr]^{\top}.
+\end{equation}
+
+
 \newpage
 \bibliography{reference}
 	

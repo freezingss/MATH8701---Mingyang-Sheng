@@ -58,7 +58,7 @@
 
 	\begin{itemize}
 		\item $j=1,2,\dots ,m$: index of groups
-		\item $i=1,2,\dots ,n$: index of observation within group $j$
+		\item $i=1,2,\dots ,n$: index of observation (each observation belongs to only one group)
 		\item $Q$: number of ``classification" corresponding to the response Q-dimensional count vector $Y_{ij}=(Y_{ij1},\dots , Y_{ijQ})^{T}\in \mathbb{Z}^{Q}_{\geq 0}$, where $Y_{ijq}$ denotes the count of category $q$ 
 		\item $p$: number of covariates
 		\item $v_{ij}$: covariate vector, where $v_{ij}\in \mathbb{R}^{p}$
@@ -274,19 +274,34 @@ For statistical purposes, PCA can be cast in a probabilistic framework. Probabil
 \subsection{Introduction}
 Logistic normal multinomial mixture model (LMM-MM) was proposed for clustering microbiome data and a family of logistic normal multinomial factor analyzers (LNM-FA) was proposed by incorporating a factor analyzer structure in LNM-MM for high-dimensional dataset as the number of free parameters in LNM-FA can be greatly reduced by assuming that the number of latent factor is small.
 Using Euclidean geometry on such compositional datasets is not appropriate, when the compositional vectors are added or multiplied, the results may end up outside the simplex and Euclidean difference does not reveal the true difference in relative abundance. Therefore, it is important to take into account the compositional nature of the data. 
-A natural choice for modelling the compositional data is a multinomial model with parameter $\boldsymbol{p}_{ij}=(p_{ij1},\cdots,p_{ijQ})^{\top}$, which denotes the probability vector for the observation $i$ in group $j$.  
+A natural choice for modelling the compositional data is a multinomial model with probability vector $\boldsymbol{p}=(p_{1},\cdots,p_{Q})^{\top}$.
 
 \subsection{Methodology}
+\subsubsection{Additive Logistic Normal Multinomial Model}
+For the counting observation $\boldsymbol{y}\in \mathbb{R}^{Q}$, the multinomial distribution conditional on the probability vector $\boldsymbol{p}=(p_{1},\cdots ,p_{Q})^{\top}$ and the total sample count $n$ is,
+\begin{equation}
+f(\boldsymbol{y}\mid \boldsymbol{p},n)=\dfrac{n!}{\prod_{q=1}^{Q}y_{q}!}\prod_{q=1}^{Q}p_{q}^{y_{q}} \propto  \prod_{q=1}^{Q}p_{q}^{y_{q}}
+\end{equation}
+where $\frac{n!}{\prod_{q=1}^{Q}y_{q}!}$ depends only on the data and $\prod_{q=1}^{Q}p_{q}^{y_{q}}$ is the product of probability. 
+
 \subsubsection{The Map from Simplex to $\mathbb{R}^{Q}$}
-For each observation, the probability vector $\boldsymbol{p}_{ij}$ is restricted by the constraint $\sum_{q=1}^{Q}p_{ijq}=1$, $p_{ijq}>0$, which do not allow us to use any other distribution in this space. Therefore, a map is necessary from the restricted space to open real space $\mathbb{R}^{Q}$. Thus, an additive log-ratio (ALR) transformation is utilized to map $\boldsymbol{p}$ from the restricted simplex $\mathbb{S}^{Q}$ to a K-dimensional open real space $\mathbb{R}^{Q}$ such that
+For each observation, the probability vector $\boldsymbol{p}$ is restricted by the constraint $\sum_{q=1}^{Q}p_{q}=1$, $p_{q}>0$, which does not allow us to use any other distribution in this space. Therefore, a map is necessary from restricted space to open real space $\mathbb{R}^{Q-1}$. Thus, an additive log-ratio (ALR) transformation is utilized to map $\boldsymbol{p}$ from the restricted simplex $\mathbb{S}^{Q-1}$ to a (Q-1)-dimensional open real space $\mathbb{R}^{Q-1}$ such that
 \begin{equation}
 \boldsymbol{W}=\phi(\boldsymbol{p})=\Bigl[\log \Bigl(\dfrac{p_{1}}{p_{Q}}\Bigr),\cdots , \log \Bigl(\dfrac{p_{Q-1}}{p_{Q}}\Bigr)\Bigr]^{\top},
 \end{equation}
-where $p_{Q}$ is used as a reference and a multivariate Gaussian distribution is imposed with mean $\boldsymbol{\mu}$ and covariance $\boldsymbol{\Sigma}$ on $\boldsymbol{W}$. Here $\phi: (0,1)^{Q} \to \mathbb{R}^{Q}$ is a one-to-one function, therefore,
+where $p_{Q}$ is used as a reference and a multivariate Gaussian distribution is imposed with mean $\boldsymbol{\mu}$ and covariance $\boldsymbol{\Sigma}$ on $\boldsymbol{W}$. Here $\phi: (0,1)^{Q-1} \to \mathbb{R}^{Q-1}$ is a one-to-one function. Therefore,
 \begin{equation}
-\boldsymbol{p}=\phi^{-1}(\boldsymbol{W})=\Bigl[ \dfrac{\exp{(W_{1})}}{\sum_{q=1}^{Q}\exp{(W_{k})}+1},\cdots , \dfrac{\exp{(W_{k})}}{\sum_{q=1}^{Q}\exp{(W_{k})}+1}\Bigr]^{\top}.
+\boldsymbol{p}=\phi^{-1}(\boldsymbol{W})=\Bigl[ \dfrac{\exp{(W_{1})}}{\sum_{q=1}^{Q-1}\exp{(W_{q})}+1},\cdots , \dfrac{\exp{(W_{q})}}{\sum_{q=1}^{Q-1}\exp{(W_{q})}+1}, \dfrac{1}{\sum_{q=1}^{Q-1}\exp{(W_{q})}+1}\Bigr]^{\top}.
 \end{equation}
-
+Thus, the conditional probability function of $\boldsymbol{Y}\mid \boldsymbol{W}$ is 
+\begin{equation}
+f(\boldsymbol{y}\mid \boldsymbol{w}) \propto \prod_{q=1}^{Q-1}\Bigl(\dfrac{\exp{(w_{q})}}{\sum_{q=1}^{Q-1}\exp{(w_{q})}+1}\Bigr)^{y_{q}} \Bigl(\dfrac{1}{\sum_{q=1}^{Q-1}\exp{(w_{q})}+1}\Bigr)^{y_{Q}},
+\end{equation}
+Here we have two layers, one is the parameter layer assuming $\boldsymbol{W}\sim \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, and the observed layer is  $\boldsymbol{Y}\mid \boldsymbol{W}\sim \mathcal{M}(\phi^{-1}(\boldsymbol{W}))$. The counts of observation $\boldsymbol{Y}$ do not depend on the parameters $\boldsymbol{\mu}$ and $\boldsymbol{\Sigma}$ directly, but they characterize the distribution of $\boldsymbol{W}$. When we marginalize over $\boldsymbol{W}$ by integrating $\boldsymbol{W}$ from the joint distribution of $(\boldsymbol{Y},\boldsymbol{W})$, the parameters are propagated into the marginal distribution of $\boldsymbol{Y}$ through the following identity,   
+\begin{align}
+f(\boldsymbol{y}\mid \boldsymbol{\mu}, \boldsymbol{\Sigma})=\int_{\mathbb{R}^{Q-1}} f(\boldsymbol{y}\mid \boldsymbol{w}) f(\boldsymbol{w}\mid \boldsymbol{\mu}, \boldsymbol{\Sigma})\,d\boldsymbol{w}.
+\end{align}
+  
 
 \newpage
 \bibliography{reference}

@@ -327,6 +327,10 @@ and the complete-data log-likelihood becomes
 \begin{equation}
 \mathcal{l}(\boldsymbol{\vartheta})=\sum_{i=1}^{m}\sum_{j=1}^{n}z_{ij}\Bigl[\log \pi_{j}+\log f(\boldsymbol{y}_{ij}\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{j})\Bigr].
 \end{equation}
+The factor analyzer structure in the mixtures of LNM models utilize the following structure on $\boldsymbol{W}$ from the $j$-th component:
+\begin{equation}
+\boldsymbol{W_{i}}=\boldsymbol{\mu}_{j}+\boldsymbol{\mathbf{B}}_{j}\mathbf{f}_{ij}+\boldsymbol{\epsilon}_{ij}
+\end{equation}
 \newpage
 \bibliography{reference}
 	

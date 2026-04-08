@@ -258,8 +258,8 @@ since we assume  $f_{j}\perp \epsilon_{j}$  for all $j$ .
 When $\mathbf{B}=\mathbf{0}$, the model reduces to independent log-normal random effects with $\mathbf{\Sigma}=\mathbf{D}$, which is the special case considered by $\cite{Lee2019AnalysisOG}$ under a Gamma distributional assumption. 
 
 
-\newpage
-\section{Identifiability Theory}
+%\newpage
+%\section{Identifiability Theory}
 
 \begin{comment}
 \newpage 
@@ -299,10 +299,34 @@ f(\boldsymbol{y}\mid \boldsymbol{w}) \propto \prod_{q=1}^{Q-1}\Bigl(\dfrac{\exp{
 \end{equation}
 Here we have two layers, one is the parameter layer assuming $\boldsymbol{W}\sim \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, and the observed layer is  $\boldsymbol{Y}\mid \boldsymbol{W}\sim \mathcal{M}(\phi^{-1}(\boldsymbol{W}))$. The counts of observation $\boldsymbol{Y}$ do not depend on the parameters $\boldsymbol{\mu}$ and $\boldsymbol{\Sigma}$ directly, but they characterize the distribution of $\boldsymbol{W}$. When we marginalize over $\boldsymbol{W}$ by integrating $\boldsymbol{W}$ from the joint distribution of $(\boldsymbol{Y},\boldsymbol{W})$, the parameters are propagated into the marginal distribution of $\boldsymbol{Y}$ through the following identity,   
 \begin{align}
-f(\boldsymbol{y}\mid \boldsymbol{\mu}, \boldsymbol{\Sigma})=\int_{\mathbb{R}^{Q-1}} f(\boldsymbol{y}\mid \boldsymbol{w}) f(\boldsymbol{w}\mid \boldsymbol{\mu}, \boldsymbol{\Sigma})\,d\boldsymbol{w}.
+f(\boldsymbol{y}\mid \boldsymbol{\mu}, \boldsymbol{\Sigma})&=\int_{\mathbb{R}^{Q-1}} f(\boldsymbol{y}\mid \boldsymbol{w}) f(\boldsymbol{w}\mid \boldsymbol{\mu}, \boldsymbol{\Sigma})\,d\boldsymbol{w}\\
+&\propto \int_{\mathbb{R^{Q-1}}} \prod_{q=1}^{Q} \bigl(\phi^{-1}(\boldsymbol{w}_{q})\bigr)^{y_{q}}  |\boldsymbol{\Sigma}|^{-\frac{1}{2}}\exp\Bigl[-\dfrac{1}{2}(\boldsymbol{y}-\boldsymbol{\mu})^{\top}\boldsymbol{\Sigma}^{-1}(\boldsymbol{y}-\boldsymbol{\mu})\Bigr]\,d\boldsymbol{w}.
 \end{align}
-  
-
+This marginal probability function of $\boldsymbol{Y}$ involves multiple integrals and cannot be further simplified.
+\subsubsection{Mixtures of the Logistic Normal Multinomial Models (LNM-MM)}
+A computationally efficient framework for clustering data was proposed for parameter estimation using variational Gaussian approximations. Using an approximating density $q(\boldsymbol{w})$, the marginal log density of $\boldsymbol{Y}$ follows,
+\begin{align}
+\log f(\boldsymbol{y})&=\int q(\boldsymbol{w})\log \dfrac{q(\boldsymbol{w})}{f(\boldsymbol{w\mid \boldsymbol{y}})}\,d\boldsymbol{w} + \int q(\boldsymbol{w})\log \dfrac{f(\boldsymbol{y},\boldsymbol{w})}{q(\boldsymbol{w})}\,d\boldsymbol{w}\\
+&= \text{(KL divergence)}D_{KL}[q(\boldsymbol{w})\mid\mid f(\boldsymbol{w\mid \boldsymbol{y}})] + F(q(\boldsymbol{w}),\boldsymbol{y}),
+\end{align}
+where $F(q(\boldsymbol{w}),y)$ is known as the evidence lower bound (ELBO). Since the left side of the equation only depends on $\boldsymbol{y}$, which is fixed for each observation, so we maximize ELBO and obtain $q(\boldsymbol{w})$ that is very close to $f(\boldsymbol{w}\mid \boldsymbol{y})$.  In VGA framework, $q(\boldsymbol{w})$ is taken to be Gaussian distribution with mean $\boldsymbol{m}$ and variance $\boldsymbol{V}$. VGA framework reduces the computational needs for an MCMC-based approach for parameter estimation and extends for clustering in high-dimensional setting.
+\subsubsection{Mixtures of Logistic Normal Multinomial Factor Analyzers}
+A finite mixture of LNM model with $n$-component can be written as,
+\begin{equation}
+f(\boldsymbol{y}_{ij}\mid \boldsymbol{\vartheta})=\sum_{j=1}^{n}\pi_{j}f(\boldsymbol{y}_{ij}\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{j}),
+\end{equation}
+where $\vartheta$ denotes the parameter space, $\pi_{j}$ denotes the mixing proportion of  the $j$-th population and $f(\boldsymbol{y}_{ij}\mid \boldsymbol{\vartheta})$ denotes the marginal probability mass function of the logistic normal multinomial model of $i$-th observation in $j$-th population. The likelihood of the mixture is the product of each probability,
+\begin{equation}
+L(\boldsymbol{\vartheta})=\prod_{i=1}^{m}\sum_{j=1}^{n}\pi_{j}f(\boldsymbol{y}_{ij}\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{j})
+\end{equation}
+However, the expression of likelihood is not suitable for further computation because it contains both sum and product. So we define a group membership indicator variable $\boldsymbol{z}_{i}=(z_{i1},\cdots ,z_{iQ})^{\top}$ such that $z_{iq}=1$ when the $i$-th observation belongs to group $j$ and 0 otherwise. In the context of clustering, these group memberships are treated as unobserved or missing data and function $L(\boldsymbol{\vartheta})$ is considered an incomplete-data likelihood function. Then the complete-data likelihood with observed data $\boldsymbol{Y}$ and missing data $\boldsymbol{Z}$ can be written as
+\begin{equation}
+L(\boldsymbol{\vartheta})=\prod_{i=1}^{m}\prod_{j=1}^{n}\Bigl[\pi_{j}f(\boldsymbol{y}_{ij}\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{j})\Bigr]^{z_{ij}}.
+\end{equation}
+and the complete-data log-likelihood becomes
+\begin{equation}
+\mathcal{l}(\boldsymbol{\vartheta})=\sum_{i=1}^{m}\sum_{j=1}^{n}z_{ij}\Bigl[\log \pi_{j}+\log f(\boldsymbol{y}_{ij}\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{j})\Bigr].
+\end{equation}
 \newpage
 \bibliography{reference}
 	

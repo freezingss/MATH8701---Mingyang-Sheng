@@ -47,12 +47,14 @@
 	\end{equation}
 	to decompose the multinomial regression into $Q$ independent Poisson regressions that can be solved in parallel. Lee, Green and Ryan (2017) extended DMR to grouped data by introducing group-level random effects $\lambda_{j}$, accommodating within-group dependence while retaining the Poisson surrogate structure. However, their model assumes $\lambda_{jq}$ to be independent across categories $q$, which rules out the cross-category correlation that is pervasive in high-dimensional settings. 
 
-	\section{Methodology}
+    % ========================================
+    % ========================================
+	\chapter{Methodology}
+    \label{chap:methodology}
 
-    \subsection{``Poisson Trick" Introduction}
-    Data with correlated categorical responses arise frequently in applications. The ``Poisson Trick" is a tool for fitting a multinomial regression model.
+    \section{Data Structure and Notation}
+    \label{sec:data}
     
-	\subsection{Correlated Multinomial Responses}
 	Consider a set of observations which fall into a collection of $J$ groups and let $\lambda_{jq}$ denotes the vector-valued random effect for group $j$. Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
 	
 
@@ -72,8 +74,43 @@
 	\end{equation}
 denoting the observation-level total, the group-category total and the group-level grand total respectively.
 	
-	\subsection{The Poisson-Multinomial Equivalence}
-	\begin{lemma}[Poisson-Multinomial Factorisation]\label{PMF}
+	\subsection{Decomposition of the Likelihood}
+	\label{sec:decomp}
+
+    The observed data $\bm{Y}$ can be decomposed into two generated models separately:
+
+    \begin{itemize}
+        \item Purchase Volumn Decision
+        \begin{equation}
+            n_{ij} \;\sim\; \operatorname{Poisson}\!\bigl(\exp(\bm{x}_{ij}^\top\bm{\gamma})\bigr),
+        \label{eq:volume}
+    \end{equation}
+    \item Purchase Composition Decision
+
+    \begin{equation}
+        \bm{y}_{ij} \mid n_{ij}, \bm{p}_{ij} \sim \operatorname{Multinomial}\bigl(n_{ij}, \bm{p}_{ij}\bigr).
+        \label{eg:composition}
+    \end{equation}
+
+    
+
+    
+    \end{itemize}
+
+    For an observation $i$ in group $j$, the likelihood is $p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr)$ and the total number is $n_{ij}=\sum_{q=1}^{Q}y_{ijq}$, where $\bm{\Phi}$ is the parameter space that determines the probability $\bm{p}_{ij}$ in multinomial distribution.
+    Then,
+    \begin{equation}
+        p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr) = \sum_{n=0}^{\infty}  p\bigl(\bm{y}_{ij}, n_{ij}=n \mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr)
+        \label{eq:totalprobability}
+    \end{equation}
+    \begin{equation}
+  p(\boldsymbol{y}_{ij}) \;=\; p(\boldsymbol{y}_{ij}\mid n_{ij})\cdot p(n_{ij}),
+  \label{eq:chain}
+    \end{equation}
+    
+    
+    
+    \begin{lemma}[Poisson-Multinomial Factorisation]\label{PMF}
 		Let $Z_{1},\dots ,Z_{Q}$ be independent with $Z_{q}\sim \mathcal{P}(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{\top}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
 		\begin{equation}
 			p(Z_{1}=z_{1},\dots ,Z_{Q}=z_{Q})=\mathcal{P}(S=s;\mu_{+})\cdot \mathcal{M}(z;p,s)
@@ -309,7 +346,7 @@ A computationally efficient framework for clustering data was proposed for param
 \log f(\boldsymbol{y})&=\int q(\boldsymbol{w})\log \dfrac{q(\boldsymbol{w})}{f(\boldsymbol{w\mid \boldsymbol{y}})}\,d\boldsymbol{w} + \int q(\boldsymbol{w})\log \dfrac{f(\boldsymbol{y},\boldsymbol{w})}{q(\boldsymbol{w})}\,d\boldsymbol{w}\\
 &= \text{(KL divergence)}D_{KL}[q(\boldsymbol{w})\mid\mid f(\boldsymbol{w\mid \boldsymbol{y}})] + F(q(\boldsymbol{w}),\boldsymbol{y}),
 \end{align}
-where $F(q(\boldsymbol{w}),y)$ is known as the evidence lower bound (ELBO). Since the left side of the equation only depends on $\boldsymbol{y}$, which is fixed for each observation, so we maximize ELBO and obtain $q(\boldsymbol{w})$ that is very close to $f(\boldsymbol{w}\mid \boldsymbol{y})$.  In VGA framework, $q(\boldsymbol{w})$ is taken to be Gaussian distribution with mean $\boldsymbol{m}$ and variance $\boldsymbol{V}$. VGA framework reduces the computational needs for an MCMC-based approach for parameter estimation and extends for clustering in high-dimensional setting.
+where $F(q(\boldsymbol{w}),y)$ is known as the evidence lower bound (ELBO, \cite{Blei03042017}). Since the left side of the equation only depends on $\boldsymbol{y}$, which is fixed for each observation, so we maximize ELBO and obtain $q(\boldsymbol{w})$ that is very close to $f(\boldsymbol{w}\mid \boldsymbol{y})$.  In VGA framework, $q(\boldsymbol{w})$ is taken to be Gaussian distribution with mean $\boldsymbol{m}$ and variance $\boldsymbol{V}$. VGA framework reduces the computational needs for an MCMC-based approach for parameter estimation and extends for clustering in high-dimensional setting.
 \subsubsection{Mixtures of Logistic Normal Multinomial Factor Analyzers}
 A finite mixture of LNM model with $n$-component can be written as,
 \begin{equation}
@@ -329,7 +366,7 @@ and the complete-data log-likelihood becomes
 \end{equation}
 The factor analyzer structure in the mixtures of LNM models utilize the following structure on $\boldsymbol{W}$ from the $j$-th component:
 \begin{equation}
-\boldsymbol{W_{i}}=\boldsymbol{\mu}_{j}+\boldsymbol{\mathbf{B}}_{j}\mathbf{f}_{ij}+\boldsymbol{\epsilon}_{ij}
+\boldsymbol{W}_{i}=\boldsymbol{\mu}_{j}+\boldsymbol{\mathbf{B}}_{j}\mathbf{f}_{ij}+\boldsymbol{\epsilon}_{ij}
 \end{equation}
 \newpage
 \bibliography{reference}

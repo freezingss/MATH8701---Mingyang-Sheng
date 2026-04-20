@@ -1,4 +1,4 @@
-\documentclass[]{article}
+\documentclass[]{report}
 % Language setting
 % Replace `english' with e.g. `spanish' to change the document language
 \usepackage[english]{babel}
@@ -14,6 +14,8 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{bbm}
+\usepackage{booktabs}
+\usepackage{bm}
 \usepackage{comment}
 \usepackage{graphicx}
 \usepackage{subcaption} 
@@ -35,9 +37,9 @@
 \begin{document}
 	
 	\thispagestyle{empty}
-	
-	\section{Introduction}
-	
+	\chapter{Introduction}
+    \label{chap:introduction}
+    \begin{comment}
 	Grouped count data arise naturally in many applied settings. In consumer behaviour research, households make repeated purchases across a large number of product categories; in agriculture, field plots are observed repeatedly across seasons with counts recorded for different seed varieties. In both cases, the data share a common structure. Observations are grouped, counts are recorded across $Q$ categories and within-group dependence is an intrinsic feature of the data.
 	
 	The multinomial distribution provides a natural model for such data, but direct estimation is computationally prohibitive when $Q$ is large. Taddy (2015) addressed this through the Distributed Multinomial Regression (DMR) framework, which exploits the exact Poisson–Multinomial factorisation
@@ -46,18 +48,13 @@
 		\prod_{q=1}^{Q}\mathcal{P}(z_{q};\mu_{q})=\mathcal{P}(S;\sum_{q}\mu_{q})\cdot \mathcal{M}(z;p,S)
 	\end{equation}
 	to decompose the multinomial regression into $Q$ independent Poisson regressions that can be solved in parallel. Lee, Green and Ryan (2017) extended DMR to grouped data by introducing group-level random effects $\lambda_{j}$, accommodating within-group dependence while retaining the Poisson surrogate structure. However, their model assumes $\lambda_{jq}$ to be independent across categories $q$, which rules out the cross-category correlation that is pervasive in high-dimensional settings. 
-
-    % ========================================
-    % ========================================
+    \end{comment}
 	\chapter{Methodology}
     \label{chap:methodology}
-
     \section{Data Structure and Notation}
     \label{sec:data}
-    
+    \begin{comment}
 	Consider a set of observations which fall into a collection of $J$ groups and let $\lambda_{jq}$ denotes the vector-valued random effect for group $j$. Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
-	
-
 	\begin{itemize}
 		\item $j=1,2,\dots ,m$: index of groups
 		\item $i=1,2,\dots ,n$: index of observation (each observation belongs to only one group)
@@ -66,52 +63,98 @@
 		\item $v_{ij}$: covariate vector, where $v_{ij}\in \mathbb{R}^{p}$
 		\item $\delta_{ij}$: known positive scalar offset
 	\end{itemize}
-
-	
 	and define the following quantities:
 	\begin{equation}
 		Y_{ij+}=\sum_{q=1}^{Q}Y_{ijq} \qquad Y_{+jq}=\sum_{i=1}^{n_{j}}Y_{ijq} \qquad Y_{j++}=\sum_{i=1}^{n_{j}}\sum_{q=1}^{Q}Y_{ijq}
 	\end{equation}
-denoting the observation-level total, the group-category total and the group-level grand total respectively.
-	
-	\subsection{Decomposition of the Likelihood}
+    denoting the observation-level total, the group-category total and the group-level grand total respectively.
+	\end{comment}
 	\label{sec:decomp}
+    Consider any counting data $\bm{Y}$, whose $i$-th observation $\bm{y}_{ij}$ falls into $j$-th group with the covariate vector $\bm{x}_{ij}\in \mathbb{R}^{R}$ includes other information of the observatrion of $R$ dimensions. Let $Q$ denote the number of categories for the count choices, that is, $\bm{y}_{ij}\in \mathbb{R}^{Q}$ and  $\bigl(\bm{p}_{ijq}\bigr)_{q=1}^{Q}$ denote the probability vector for $Q$ categories.  For each observation $\bm{y}_{ij}$, $n_{ij}=\sum_{q=1}^{ Q} y_{ijq}$ denotes the total number of the count.
+\begin{comment}
+    Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
+\end{comment}
+\medskip
+\noindent Table~\ref{tab:notation} summarises the index conventions
+used throughout.
 
-    The observed data $\bm{Y}$ can be decomposed into two generated models separately:
-
+\begin{table}[h]
+\centering
+\caption{Index and Notation Summary.}
+\label{tab:notation}
+\begin{tabular}{lll}
+\toprule
+Symbol & Range & Meaning \\
+\midrule
+$i$ & $1,\ldots,m$ & Observation Index\\
+$j$ & $1,\ldots,n$ & Group Index\\
+$q$ & $1,\ldots,Q$ & Choice Category\\
+$r$ & $1,\ldots,R$ & Covariate dimension \\
+$k$ & $1,\ldots,K$ & Latent factor ($K\ll Q$) \\
+\end{tabular}
+\end{table}
+\section{Likelihood Decomposition}
+    Assume $\bm{\gamma}\in \mathbb{R}^{R}$ is the coefficient vector that determines the distribution of $n_{ij}$ with the covariate vector $\bm{x}_{ij}$. The observed data $\bm{Y}$ can be decomposed into two generated models separately:
     \begin{itemize}
-        \item Purchase Volumn Decision
+    \item Volumn Decision
         \begin{equation}
-            n_{ij} \;\sim\; \operatorname{Poisson}\!\bigl(\exp(\bm{x}_{ij}^\top\bm{\gamma})\bigr),
+            n_{ij} \sim \operatorname{Poisson}\!\bigl(\exp(\bm{x}_{ij}^\top\bm{\gamma})\bigr),
         \label{eq:volume}
     \end{equation}
-    \item Purchase Composition Decision
-
+    \item Composition Decision
     \begin{equation}
         \bm{y}_{ij} \mid n_{ij}, \bm{p}_{ij} \sim \operatorname{Multinomial}\bigl(n_{ij}, \bm{p}_{ij}\bigr).
         \label{eg:composition}
     \end{equation}
-
-    
-
-    
     \end{itemize}
 
-    For an observation $i$ in group $j$, the likelihood is $p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr)$ and the total number is $n_{ij}=\sum_{q=1}^{Q}y_{ijq}$, where $\bm{\Phi}$ is the parameter space that determines the probability $\bm{p}_{ij}$ in multinomial distribution.
-    Then,
+    Suppose $\bm{\Phi}$ be the collection of all parameters governing the purchase composition $\bm{p}_{ij}$, excluding the covariate vector $\bm{x}_{ij}$ and the coefficient vector $\bm{\gamma}$. For an observation $\bm{y}_{ij}$, the likelihood function of the original data $\bm{y}_{ij}$ is $p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr)$. Then,
     \begin{equation}
-        p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr) = \sum_{n=0}^{\infty}  p\bigl(\bm{y}_{ij}, n_{ij}=n \mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr)
+        p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr) = \sum_{n=0}^{\infty}  p\bigl(\bm{y}_{ij}, n_{ij}=n \mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr).
         \label{eq:totalprobability}
     \end{equation}
+    Since $n_{ij}$ is fixed for an observation, only one term is not equal to 0. Therefore, 
+    \begin{align*}
+     \log p\bigl(\bm{y}_{ij}\mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr) &=   \log p\bigl(\bm{y}_{ij}, n_{ij} \mid \bm{x}_{ij}, \bm{\gamma},\bm{\Phi}\bigr)\\
+     &= \log p\bigl(\bm{y}_{ij}\mid n_{ij}, \bm{\Phi}\bigr)+\log  p\bigl( n_{ij} \mid \bm{x}_{ij}, \bm{\gamma}\bigr)\\
+     &= \underbrace{n_{ij}\cdot \bm{x}_{ij}^{\top} \bm{\gamma}-\exp ( \bm{x}_{ij}^{\top} \bm{\gamma})}_{\ell_{\mathrm{vol}(\gamma)}}-\underbrace{\sum_{q} \log (y_{ijq}!)}_{\mathrm{constant}}+\underbrace{\sum_{q}y_{ijq}\log (p_{ijq})}_{\ell_{comp}(p_{ijq})}.
+    \end{align*}
+    The logarithmic likelihood separates into $\ell_{vol}(\bm{\gamma})$, which depends only on $\bm{\gamma}$,  and $\ell_{comp}(\Phi)$, which depends only on $\bm{\Phi}$. The constant term does not depend on any parameter. 
+    \begin{comment}
     \begin{equation}
-  p(\boldsymbol{y}_{ij}) \;=\; p(\boldsymbol{y}_{ij}\mid n_{ij})\cdot p(n_{ij}),
-  \label{eq:chain}
+        p(\boldsymbol{y}_{ij}) \;=\; p(\boldsymbol{y}_{ij}\mid n_{ij})\cdot p(n_{ij}),
+        \label{eq:chain}
     \end{equation}
+  \end{comment}
+    Hence, the data set $\bm{Y}$ can be decomposed into two disjoint models under the assumption of two decisions, and the further analysis of latent factors can be structured on the composition decision only, which is not related to the total count number.
+    \begin{remark}[Parameter separation]
+\label{rem:separation}
+The cross-partial derivative $\frac{\partial^2\ell}{\partial\bm{\gamma}\,\partial\bm{\Phi}}=\bm{0}$ everywhere. Consequently, the maximum likelihood estimator of $\bm{\Phi}$ is obtained by maximizing $\ell_{\mathrm{comp}}(\bm{\Phi})$ alone. The composition parameters are estimated entirely from the relative allocation across count categories and free of confounding by volume heterogeneity. This is a principal advantage over Poisson-lognormal models such as \cite{chiquet2018}, in which volume and composition are entangled in a single Poisson likelihood.
+\end{remark}
     
-    
-    
+Now, a pure multinomial distribution has been obtained from the original data set $\bm{Y}$, and inference of the latent factor structure can proceed by maximizing:
+\begin{equation}
+    \ell_{comp}(\Phi)=\sum_{i,j}\sum_{q} y_{ijq}\log (p_{ijq}).
+    \label{eq:complink}
+\end{equation}
+The log-likelihood of the multinomial model with unknown probability vector $\bm{p}_{ij}$ and the remaining task is to specify a flexible yet parsimonious structure for $\bm{p}_{ij}$ that addresses two objectives:
+\begin{description}
+\item[Objective~1 (High-dimensional $Q$).] When $Q$ is large,  estimating $\bm{p}_{ij}$ requires $O(m\,n\,Q)$ parameters, whose cost is expensive and unidentifiable without structure. We seek a low-rank decomposition that compresses the $Q$-dimensional probability vector into a $K$-dimensional latent space, $K\ll Q$.
+\item[Objective~2 (Cross-category Co-variation).] Categories do not change independently across $j$ groups, so we want to design a model that captures the group-level effects between categories and do the inferential analyze.
+\end{description}
+\section{Parameter Estimation Modeling}
+ Following the framework of \cite{lee2017poissontrickextensionsfitting}, we introduce two sets of positive latent quantities:
+ \begin{itemize}
+ \item $\zeta_{iq}$: an individual-level fixed effect for individual $i$ on category $q$ capturing preference heterogeneity for an observation.
+ \item  $\lambda_{jq}$: a group-level random effect for group $j$ and category $q$ capturing the variation happens in the whole group.
+\end{itemize}
+We define the probability as the normalized product of these two quantities:
+\begin{equation}
+    p_{ijq}=\dfrac{\lambda_{jq}\,\zeta_{iq}}{\sum_{q'} \lambda_{jq'}\,\zeta_{iq'}}
+    \label{eq:probproduct}
+\end{equation}
     \begin{lemma}[Poisson-Multinomial Factorisation]\label{PMF}
-		Let $Z_{1},\dots ,Z_{Q}$ be independent with $Z_{q}\sim \mathcal{P}(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{\top}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
+		Let $Z_{1},\dots ,Z_{Q}$ be independent and $Z_{q}\sim \mathcal{P}(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{\top}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
 		\begin{equation}
 			p(Z_{1}=z_{1},\dots ,Z_{Q}=z_{Q})=\mathcal{P}(S=s;\mu_{+})\cdot \mathcal{M}(z;p,s)
 		\end{equation}
@@ -150,30 +193,30 @@ and $\phi_{q}\in \mathbb{R}^{p}$ is a vector of regression coefficients for cate
 			Y_{ij+}|\lambda_{j}\sim \mathcal{P}(\delta_{ij}\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}).
 		\end{equation}
 independently for each $i$ and $j$. This gives
-\begin{equation}
-Y_{ijq}|\lambda_{jq}\sim \mathcal{P}(\delta_{ij}\lambda_{jq}\zeta_{ijq}),
-\end{equation}
+    \begin{equation}
+        Y_{ijq}|\lambda_{jq}\sim \mathcal{P}(\delta_{ij}\lambda_{jq}\zeta_{ijq}),
+    \end{equation}
 independently for each $j$ and $q$. Now the relationship of likelihood between multinomial and poisson models satisfies 
-\begin{equation}\label{ori_likelihood}
-    \sum_{j} \sum_{i} \ell^{\mathcal{P}} \left( \delta_{ij} \sum_{q=1}^{Q} \lambda_{jq} \zeta_{ijq};\, Y_{ij+} \Big| \lambda_j \right) + \sum_{j} \sum_{i} \ell^{\mathcal{M}} \left( \zeta_{ij};\, Y_{ij} \Big| Y_{ij+},\, \lambda_j \right) = \sum_{j} \sum_{i} \sum_{q} \ell^{\mathcal{P}} \left( \delta_{ij} \lambda_{jq} \zeta_{ijq};\, Y_{ijq} \Big| \lambda_{jq} \right).
-\end{equation}
+    \begin{equation}\label{ori_likelihood}
+        \sum_{j} \sum_{i} \ell^{\mathcal{P}} \left( \delta_{ij} \sum_{q=1}^{Q} \lambda_{jq} \zeta_{ijq};\, Y_{ij+} \Big| \lambda_j \right) + \sum_{j} \sum_{i} \ell^{\mathcal{M}} \left( \zeta_{ij};\, Y_{ij} \Big| Y_{ij+},\, \lambda_j \right) = \sum_{j} \sum_{i} \sum_{q} \ell^{\mathcal{P}} \left( \delta_{ij} \lambda_{jq} \zeta_{ijq};\, Y_{ijq} \Big| \lambda_{jq} \right).
+    \end{equation}
 	However, the random effects are unobserved so we consider the marginal distribution obtained by integrating out the random effects. The marginal likelihood of the approximating poisson surrogate model (right hand side of Equation \ref{ori_likelihood}) can be expressed in closed-form if we assume an independent Gamma model for the random effect, i.e. $\lambda_{jq}\sim G(\alpha, \beta)$. Then the marginal likelihood of the multinomial model that we would like to fit (second term on the left hand side of Equation \ref{ori_likelihood}) is given by
-\begin{equation}
-    L^{\mathcal{M}} = \prod_{j} \int \cdots \int \prod_{i} \left\{ \frac{y_{ij+}!}{\prod_{q} y_{ijq}!} \prod_{q} \left( \frac{\lambda_{jq} \zeta_{ijq}}{\sum_{q=1}^{Q} \lambda_{jq} \zeta_{ijq}} \right)^{y_{ijq}} \right\} \times \prod_{q} \frac{\beta_{q}^{\alpha_q} \lambda_{jq}^{\alpha_q - 1} e^{-\beta_q \lambda_{jq}}}{\Gamma(\alpha_q)} \, \mathrm{d}\lambda_{j1} \cdots \mathrm{d}\lambda_{jQ}.
-\end{equation}
+    \begin{equation}
+        L^{\mathcal{M}} = \prod_{j} \int \cdots \int \prod_{i} \left\{ \frac{y_{ij+}!}{\prod_{q} y_{ijq}!} \prod_{q} \left( \frac{\lambda_{jq} \zeta_{ijq}}{\sum_{q=1}^{Q} \lambda_{jq} \zeta_{ijq}} \right)^{y_{ijq}} \right\} \times \prod_{q} \frac{\beta_{q}^{\alpha_q} \lambda_{jq}^{\alpha_q - 1} e^{-\beta_q \lambda_{jq}}}{\Gamma(\alpha_q)} \, \mathrm{d}\lambda_{j1} \cdots \mathrm{d}\lambda_{jQ}.
+    \end{equation}
 which does not generally exhibit a closed-form solution regardless of the random effect distribution. On the other hand, the marginal likelihood of the Poisson surrogate model can be expressed in closed-form
-\begin{align}
-    L^{\mathcal{P}} &= \prod_{i} \left\{ \int \cdots \int \prod_{j} \prod_{q} \frac{e^{-\delta_{ij} \lambda_{iq} \zeta_{ijq}} (\delta_{ij} \lambda_{iq} \zeta_{ijq})^{y_{ijq}}}{y_{ijq}!} \prod_{q} \frac{\beta_{q}^{\alpha_q} \lambda_{iq}^{\alpha_q - 1} e^{-\beta_q \lambda_{iq}}}{\Gamma(\alpha_q)} \, \mathrm{d}\lambda_{i1} \cdots \mathrm{d}\lambda_{iQ} \right\} \nonumber \\
-    &= \prod_{i} \left\{ \prod_{q} \frac{\Gamma(\alpha_q + y_{i+q}) \beta_{q}^{\alpha_q}}{\Gamma(\alpha_q)(\beta_q + \sum_{j} \delta_{ij} \zeta_{ijq})^{\alpha_q + y_{i+q}}} \times \prod_{j} \prod_{q} \frac{(\delta_{ij} \zeta_{ijq})^{y_{ijq}}}{y_{ijq}!} \right\}.
-\end{align}
+    \begin{align}
+        L^{\mathcal{P}} &= \prod_{i} \left\{ \int \cdots \int \prod_{j} \prod_{q} \frac{e^{-\delta_{ij} \lambda_{iq} \zeta_{ijq}} (\delta_{ij} \lambda_{iq} \zeta_{ijq})^{y_{ijq}}}{y_{ijq}!} \prod_{q} \frac{\beta_{q}^{\alpha_q} \lambda_{iq}^{\alpha_q - 1} e^{-\beta_q \lambda_{iq}}}{\Gamma(\alpha_q)} \, \mathrm{d}\lambda_{i1} \cdots \mathrm{d}\lambda_{iQ} \right\} \nonumber \\
+        &= \prod_{i} \left\{ \prod_{q} \frac{\Gamma(\alpha_q + y_{i+q}) \beta_{q}^{\alpha_q}}{\Gamma(\alpha_q)(\beta_q + \sum_{j} \delta_{ij} \zeta_{ijq})^{\alpha_q + y_{i+q}}} \times \prod_{j} \prod_{q} \frac{(\delta_{ij} \zeta_{ijq})^{y_{ijq}}}{y_{ijq}!} \right\}.
+    \end{align}
 
-\begin{comment} 
-    The Poisson-Multinomial equivalence, therefore, is exactly at the conditional level, given $\lambda_{j}$. The multinomial probability vector $p_{ij}$ depends on $\lambda_{j}$ only through the ratios $\frac{\lambda_{jq}}{\sum_{q}\lambda_{jq}}$, so the random effects act as multiplicative modulation of the category probabilities that varies across groups but remains constant within a group across observations. 
-\end{comment}
+    \begin{comment} 
+        The Poisson-Multinomial equivalence, therefore, is exactly at the conditional level, given $\lambda_{j}$. The multinomial probability vector $p_{ij}$ depends on $\lambda_{j}$ only through the ratios $\frac{\lambda_{jq}}{\sum_{q}\lambda_{jq}}$, so the random effects act as multiplicative modulation of the category probabilities that varies across groups but remains constant within a group across observations. 
+    \end{comment}
 
-\begin{comment}
-    There are some disadvantages when we use the Poisson surrogate model directly, and we want to find the low-rank structure of matrix. Hence factor-structured random effect is introduced.
-\end{comment}
+    \begin{comment}
+        There are some disadvantages when we use the Poisson surrogate model directly, and we want to find the low-rank structure of matrix. Hence factor-structured random effect is introduced.
+    \end{comment}
   
 	\subsection{Factor-Structured Random Effects}
 	The cross-category correlation is driven by common latent factors rather than being independently determined for each category. We proposes a factor-structured random effects model of $\boldsymbol{\lambda}_{j}$ across groups.  $\lambda_{jq}$ are independent across $q$, so the cross-category covariance of $\boldsymbol{\lambda}_{j}$ is diagonal. This assumption becomes increasingly restrictive as $Q$ grows, since it rules out the systematic co-variation of preferences across categories that is typical in high-dimensional count data. We relax this assumption by modelling the log-transformed random effects through a latent factor model:
@@ -194,18 +237,18 @@ which does not generally exhibit a closed-form solution regardless of the random
 	\end{equation}
     \begin{proof}
 Under the latent factor model,
-\[
-\log \boldsymbol{\lambda}_j \mid \mathbf{f}_j
-=
-\boldsymbol{\mu} + \mathbf{B}\mathbf{f}_j + \boldsymbol{\varepsilon}_j,
-\qquad
-\boldsymbol{\varepsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D}),
-\]
+    \[
+    \log \boldsymbol{\lambda}_j \mid \mathbf{f}_j
+    =
+    \boldsymbol{\mu} + \mathbf{B}\mathbf{f}_j + \boldsymbol{\varepsilon}_j,
+    \qquad
+    \boldsymbol{\varepsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D}),
+    \]
 so that
-\[
-\log \boldsymbol{\lambda}_j \mid \mathbf{f}_j
-\sim \mathcal{N}_Q(\boldsymbol{\mu}+\mathbf{B}\mathbf{f}_j, \mathbf{D}).
-\]
+    \[
+    \log \boldsymbol{\lambda}_j \mid \mathbf{f}_j
+    \sim \mathcal{N}_Q(\boldsymbol{\mu}+\mathbf{B}\mathbf{f}_j, \mathbf{D}).
+    \]
 
 By the law of total expectation,
 \[
@@ -343,8 +386,11 @@ This marginal probability function of $\boldsymbol{Y}$ involves multiple integra
 \subsubsection{Mixtures of the Logistic Normal Multinomial Models (LNM-MM)}
 A computationally efficient framework for clustering data was proposed for parameter estimation using variational Gaussian approximations. Using an approximating density $q(\boldsymbol{w})$, the marginal log density of $\boldsymbol{Y}$ follows,
 \begin{align}
-\log f(\boldsymbol{y})&=\int q(\boldsymbol{w})\log \dfrac{q(\boldsymbol{w})}{f(\boldsymbol{w\mid \boldsymbol{y}})}\,d\boldsymbol{w} + \int q(\boldsymbol{w})\log \dfrac{f(\boldsymbol{y},\boldsymbol{w})}{q(\boldsymbol{w})}\,d\boldsymbol{w}\\
-&= \text{(KL divergence)}D_{KL}[q(\boldsymbol{w})\mid\mid f(\boldsymbol{w\mid \boldsymbol{y}})] + F(q(\boldsymbol{w}),\boldsymbol{y}),
+\log f(\boldsymbol{y})
+&= \int q(\boldsymbol{w}) \log \frac{q(\boldsymbol{w})}{f(\boldsymbol{w}\mid \boldsymbol{y})}\, d\boldsymbol{w}
+ + \int q(\boldsymbol{w}) \log \frac{f(\boldsymbol{y}, \boldsymbol{w})}{q(\boldsymbol{w})}\, d\boldsymbol{w} \\
+&= D_{KL}\!\bigl[q(\boldsymbol{w}) \,\|\, f(\boldsymbol{w}\mid \boldsymbol{y})\bigr]
+ + F\bigl(q(\boldsymbol{w}), \boldsymbol{y}\bigr).
 \end{align}
 where $F(q(\boldsymbol{w}),y)$ is known as the evidence lower bound (ELBO, \cite{Blei03042017}). Since the left side of the equation only depends on $\boldsymbol{y}$, which is fixed for each observation, so we maximize ELBO and obtain $q(\boldsymbol{w})$ that is very close to $f(\boldsymbol{w}\mid \boldsymbol{y})$.  In VGA framework, $q(\boldsymbol{w})$ is taken to be Gaussian distribution with mean $\boldsymbol{m}$ and variance $\boldsymbol{V}$. VGA framework reduces the computational needs for an MCMC-based approach for parameter estimation and extends for clustering in high-dimensional setting.
 \subsubsection{Mixtures of Logistic Normal Multinomial Factor Analyzers}

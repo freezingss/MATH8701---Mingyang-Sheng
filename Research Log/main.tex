@@ -14,6 +14,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{bbm}
+\usepackage\{pifont} 
 \usepackage{booktabs}
 \usepackage{bm}
 \usepackage{comment}
@@ -119,40 +120,87 @@ $k$ & $1,\ldots,K$ & Latent factor ($K\ll Q$) \\
      &= \log p\bigl(\bm{y}_{ij}\mid n_{ij}, \bm{\Phi}\bigr)+\log  p\bigl( n_{ij} \mid \bm{x}_{ij}, \bm{\gamma}\bigr)\\
      &= \underbrace{n_{ij}\cdot \bm{x}_{ij}^{\top} \bm{\gamma}-\exp ( \bm{x}_{ij}^{\top} \bm{\gamma})}_{\ell_{\mathrm{vol}(\gamma)}}-\underbrace{\sum_{q} \log (y_{ijq}!)}_{\mathrm{constant}}+\underbrace{\sum_{q}y_{ijq}\log (p_{ijq})}_{\ell_{comp}(p_{ijq})}.
     \end{align*}
-    The logarithmic likelihood separates into $\ell_{vol}(\bm{\gamma})$, which depends only on $\bm{\gamma}$,  and $\ell_{comp}(\Phi)$, which depends only on $\bm{\Phi}$. The constant term does not depend on any parameter. 
-    \begin{comment}
-    \begin{equation}
-        p(\boldsymbol{y}_{ij}) \;=\; p(\boldsymbol{y}_{ij}\mid n_{ij})\cdot p(n_{ij}),
-        \label{eq:chain}
-    \end{equation}
-  \end{comment}
-    Hence, the data set $\bm{Y}$ can be decomposed into two disjoint models under the assumption of two decisions, and the further analysis of latent factors can be structured on the composition decision only, which is not related to the total count number.
+    The logarithmic likelihood separates into $\ell_{vol}(\bm{\gamma})$, which depends only on $\bm{\gamma}$,  and $\ell_{comp}(\Phi)$, which depends only on $\bm{\Phi}$. The constant term does not depend on any parameter. Hence, the data set $\bm{Y}$ can be decomposed into two disjoint models under the assumption of two decisions, and the further analysis of latent factors can be structured on the composition decision only, which is not related to the total count number.
     \begin{remark}[Parameter separation]
 \label{rem:separation}
 The cross-partial derivative $\frac{\partial^2\ell}{\partial\bm{\gamma}\,\partial\bm{\Phi}}=\bm{0}$ everywhere. Consequently, the maximum likelihood estimator of $\bm{\Phi}$ is obtained by maximizing $\ell_{\mathrm{comp}}(\bm{\Phi})$ alone. The composition parameters are estimated entirely from the relative allocation across count categories and free of confounding by volume heterogeneity. This is a principal advantage over Poisson-lognormal models such as \cite{chiquet2018}, in which volume and composition are entangled in a single Poisson likelihood.
 \end{remark}
-    
-Now, a pure multinomial distribution has been obtained from the original data set $\bm{Y}$, and inference of the latent factor structure can proceed by maximizing:
+    Now, a pure multinomial distribution has been obtained from the original data set $\bm{Y}$, and inference of the latent factor structure can proceed by maximizing:
 \begin{equation}
     \ell_{comp}(\Phi)=\sum_{i,j}\sum_{q} y_{ijq}\log (p_{ijq}).
     \label{eq:complink}
 \end{equation}
-The log-likelihood of the multinomial model with unknown probability vector $\bm{p}_{ij}$ and the remaining task is to specify a flexible yet parsimonious structure for $\bm{p}_{ij}$ that addresses two objectives:
+    The log-likelihood of the multinomial model with unknown probability vector $\bm{p}_{ij}$ and the remaining task is to specify a flexible yet parsimonious structure for $\bm{p}_{ij}$ that addresses two objectives:
 \begin{description}
 \item[Objective~1 (High-dimensional $Q$).] When $Q$ is large,  estimating $\bm{p}_{ij}$ requires $O(m\,n\,Q)$ parameters, whose cost is expensive and unidentifiable without structure. We seek a low-rank decomposition that compresses the $Q$-dimensional probability vector into a $K$-dimensional latent space, $K\ll Q$.
 \item[Objective~2 (Cross-category Co-variation).] Categories do not change independently across $j$ groups, so we want to design a model that captures the group-level effects between categories and do the inferential analyze.
 \end{description}
 \section{Parameter Estimation Modeling}
- Following the framework of \cite{lee2017poissontrickextensionsfitting}, we introduce two sets of positive latent quantities:
+ Following the framework in \cite{lee2017poissontrickextensionsfitting}, we introduce two sets of positive latent quantities:
  \begin{itemize}
  \item $\zeta_{iq}$: an individual-level fixed effect for individual $i$ on category $q$ capturing preference heterogeneity for an observation.
  \item  $\lambda_{jq}$: a group-level random effect for group $j$ and category $q$ capturing the variation happens in the whole group.
 \end{itemize}
 We define the probability as the normalized product of these two quantities:
 \begin{equation}
-    p_{ijq}=\dfrac{\lambda_{jq}\,\zeta_{iq}}{\sum_{q'} \lambda_{jq'}\,\zeta_{iq'}}
-    \label{eq:probproduct}
+    p_{ijq}=\dfrac{\lambda_{jq}\,\zeta_{iq}}{\sum_{q'=1}^{Q} \lambda_{jq'}\,\zeta_{iq'}}
+    \label{eq:prob_product}
 \end{equation}
+    Here we do the seperability assumption that the probability is determined by two terms. The joint term related to both indices $i,j,q$ leads unreadable issue and expensive costs when $Q$ is large. The complexity reduces from $O(m\,n\,Q)$ to $O(m\,Q+n\,Q)$, which simplifies the computation cost.
+\subsection{Connection to Poisson Representation}
+\label{subsec:poisson_connection}
+    For the multinomial distribution obtained from $\bm{Y}$, it can be surrogated by the sum of the Poisson distribution given the total number.
+\begin{proposition}[Poisson-Multinomial Equivalence]
+\label{pme}
+Let $z_{ijq}\sim \operatorname{Poisson}(\zeta_{iq}\lambda_{jq})$ be identical and independent with $\mu_{ijq}=\zeta_{iq}\lambda_{jq}$ and $\mu_{ij+}=\sum_{q}\zeta_{iq}\lambda_{jq}$. Then,
+\begin{equation}
+    \bigl(z_{ij1},\dots , z_{ijQ}\bigr)\Big| \sum_{q} z_{ijq}=n_{ij} \sim \operatorname{Multinomial}\bigl(n_{ij}, \frac{\mu_{ij1}}{\mu_{ij+}},\dots, \frac{\mu_{ijQ}}{\mu_{ij+}}\bigr) .
+    \label{Poisson_trick}
+\end{equation}
+\end{proposition}
+    Proposition \ref{pme} establishes that the multinomial model with probability \ref{eq:prob_product} is the conditional distribution of independent Poisson variables given the sum. 
+\subsection{Address the Objective 1: Parameter Structure of $\zeta_{iq}$}
+\label{zeta_estimate}
+
+
+\subsection{Address the Objective 2: Parameter Structure of $\lambda_{jq}$}
+\label{lambda_estimate}
+    Objective 2 requires capturing the systematic co-variation of probabilities across categories within a group. A natural starting point is to model $\bm{\lambda}_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{\top}$ with $Q$ independent random effects. However, this assumption becomes increasingly restrictive as $Q$ grows. Independence implies a diagonal cross-category covariance structure for $\bm{\lambda}_{j}$, which rules out the systematic co-variance of the probabilities that occurs in high-dimensional data. Moreover, the independent specification requires $O(n\,Q)$ parameters, which is infeasible when both $n$ and $Q$ are large.
+    We relax this assumption by positing that the cross-category co-variation is driven by a small number of common latent factors rather than being independently determined for each categories. Specifically, we impose a low-rank factor-analytic structure on the log-transformed random effects: 
+\begin{equation}
+		\log \boldsymbol{\lambda}_{j}=\boldsymbol{\mu}+\mathbf{B}\boldsymbol{f}_{j}+\boldsymbol{\epsilon}_{j}
+\end{equation}
+    where:
+\begin{itemize}
+\item $\boldsymbol{\mu}=(\mu_{1},\dots ,\mu_{Q})^{\top}\in \mathbb{R}^{Q}$ denotes the population-level baseline log-intensities for each category,
+\item $\mathbf{B}=[\boldsymbol{b}_{1},\dots ,\boldsymbol{b}_{K}]\in \mathbb{R}^{Q\times K}$ denotes the factor loading matrix with $K\ll Q$ and its entries $\mathbf{B}_{qk}$ denote the sensitivity of category $q$'s random effect to the $k$-th latent factor,
+\item $\boldsymbol{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores assumed as follows, distributed identically and independently, distributed as $\boldsymbol{f}_{j}\sim \mathcal{N}_{K}(0,\mathbf{I}_{K})$,
+\item $\bm{\epsilon}_{j}\in \mathbb{R}^{Q}$ denotes the error term capturing category-specific variation in $\boldsymbol{\lambda}_{j}$ that is not attributable to $K$ latent factors, distributed as $\boldsymbol{\epsilon}_{j}\sim \mathcal{N}_{Q}(0,\mathbf{D}), \quad \mathbf{D}=\text{diag}(d_{1}^{2},\dots d_{Q}^{2})$.
+\end{itemize}
+with $\boldsymbol{f}_{j}\perp \boldsymbol{\epsilon}_{j}$ for all $j$. Then the marginal distribution of $\log \boldsymbol{\lambda}_{j}$ is:
+\begin{equation}
+		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{\top}+\mathbf{D}
+\end{equation}
+\begin{table}[h]
+\centering
+\caption{Comparison of covariance structures for the group-level 
+random effect $\boldsymbol{\lambda}_j$.}
+\label{tab:cov_comparison}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Specification} & \textbf{Parameters} & \textbf{Cross-category} & \textbf{Feasibility} \\
+                       &                     & \textbf{co-variation}   & \textbf{(large $Q$)} \\
+\midrule
+Independent random effects  
+  & $nQ$& No co-variation& Feasible\\[6pt]
+Low-rank factor-analyzer& $nK + QK + Q$& $\mathbf{BB}^{\top}$& Feasible\\[6pt]
+Unstructured covariance  
+  & $nQ(Q+1)/2$& Covariance Matrix& Intractable\\
+\bottomrule
+\end{tabular}
+
+\end{table}
+    \begin{comment}
     \begin{lemma}[Poisson-Multinomial Factorisation]\label{PMF}
 		Let $Z_{1},\dots ,Z_{Q}$ be independent and $Z_{q}\sim \mathcal{P}(\mu_{q})$ for $q=1,2,\dots ,Q$, where $\mu_{q}>0$. Define $S=\sum_{q=1}^{Q}Z_{q}$ and the probability vector $p=(\frac{\mu_1}{\mu_{+}},\dots ,\frac{\mu_Q}{\mu_{+}})^{\top}$, where $\mu_{+}=\sum_{q=1}^{Q}\mu_{q}$.Then the joint distribution of $(Z_{1},\dots,Z_{Q})$ factorises exactly as:
 		\begin{equation}
@@ -160,20 +208,19 @@ We define the probability as the normalized product of these two quantities:
 		\end{equation}
 		where $s=\sum_{q=1}^{Q}z_{q}$, $\mathcal{P}(\sim ;\mu_{+})$ denotes the Poisson probability mass function with poisson parameter $\mu_{+}$ and $\mathcal{M}(\sim ;p,s)$ denotes the multinomial probability mass function given total $s$ and probability vector $p$.
 	\end{lemma}
-	
 	\begin{proof}
 		Since $Z_{1},\dots ,Z_{Q}$ are independent with $Z_{q}\sim \mathcal{P}(\mu_{q})$, by direct computation:
 		\begin{equation}
 			\prod_{q=1}^{Q} \frac{e^{-\mu_{q}}\mu_{q}^{z_{q}}}{z_{q}!}=e^{-\mu_{+}}\cdot \frac{\mu_{+}^{s}}{s!}\cdot \frac{s!}{\prod_{q=1}^{Q}z_{q}!} \prod_{q=1}^{Q}(\frac{\mu_{q}}{\mu_{+}})^{z_{q}}= \mathcal{P}(s;\mu_{+})\cdot\mathcal{M}(z;p,s).
 		\end{equation}
 	\end{proof}
-	
 	\begin{remark}
 		Lemma has an important implication for inference. 
 	\end{remark}
-	
+	\end{comment}
+    
 	\subsection{Conditional Model Given Random Effects}
-	To discuss with-in group dependence, we introduce a Q-dimensional vector of group-specific random effects $\lambda_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{\top}$, where $\lambda_{jq}>0$ represents the multiplicative deviation of group $j$'s baseline intensity for category $q$ from the population average. Conditional on $\lambda_{j}$, we assume that all counts within group $j$ are independent:
+	To discuss within group dependence, we introduce a Q-dimensional vector of group-specific random effects $\lambda_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{\top}$, where $\lambda_{jq}>0$ represents the multiplicative deviation of group $j$'s baseline intensity for category $q$ from the population average. Conditional on $\lambda_{j}$, we assume that all counts within group $j$ are independent:
 	\begin{equation}\label{conditional}
 		Y_{ijq}|\lambda_{j} \sim \mathcal{P}(\delta_{ij}\lambda_{jq}\zeta_{ijq}), i=i,\dots ,n_{j}, q=1,\dots ,Q
 	\end{equation}
@@ -181,7 +228,7 @@ where the fixed-effect component of the conditional mean is:
 	\begin{equation}
 		\zeta_{ijq}=\exp(v_{ij}^{\top}\phi_{q})
 	\end{equation}
-and $\phi_{q}\in \mathbb{R}^{p}$ is a vector of regression coefficients for category $q$. The random effect $\lambda_{jq}$ captures the persistent tendency of group $j$ toward category $q$ that is not explained by the observed covariates $v_{ij}$. Observations within the same group share one same $\lambda_{j}$, which induces within-group dependence even after conditioning on covariates.
+and $\phi_{q}\in \mathbb{R}^{p}$ is a vector of regression coefficients for category $q$. The random effect $\lambda_{jq}$ captures the persistent tendency of group $j$ towards category $q$ that is not explained by the observed covariates $v_{ij}$. Observations within the same group share one same $\lambda_{j}$, which induces within-group dependence even after conditioning on covariates.
 	\begin{remark}[Conditional Poisson-Multinomial Equivalence]
 		By Lemma \ref{PMF} applied conditionally, model \ref{conditional} implies that:
 		\begin{equation}

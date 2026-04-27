@@ -40,7 +40,7 @@
 	\thispagestyle{empty}
 	\chapter{Introduction}
     \label{chap:introduction}
-    \begin{comment}
+\begin{comment}
 	Grouped count data arise naturally in many applied settings. In consumer behaviour research, households make repeated purchases across a large number of product categories; in agriculture, field plots are observed repeatedly across seasons with counts recorded for different seed varieties. In both cases, the data share a common structure. Observations are grouped, counts are recorded across $Q$ categories and within-group dependence is an intrinsic feature of the data.
 	
 	The multinomial distribution provides a natural model for such data, but direct estimation is computationally prohibitive when $Q$ is large. Taddy (2015) addressed this through the Distributed Multinomial Regression (DMR) framework, which exploits the exact Poisson–Multinomial factorisation
@@ -50,11 +50,19 @@
 	\end{equation}
 	to decompose the multinomial regression into $Q$ independent Poisson regressions that can be solved in parallel. Lee, Green and Ryan (2017) extended DMR to grouped data by introducing group-level random effects $\lambda_{j}$, accommodating within-group dependence while retaining the Poisson surrogate structure. However, their model assumes $\lambda_{jq}$ to be independent across categories $q$, which rules out the cross-category correlation that is pervasive in high-dimensional settings. 
     \end{comment}
+    The generalized linear mixed models involves fixed and random effects associated with different sets of covariates. The setting of high - dimensional models is common in current social science applications, for example, political scientists use these models as part of estimating public opinion at hundreds or thousands of geographic units, or rely on models with co-called deep interactions. A different application of such models is for recommendation systems where the categorical factors correspond to customer and products.
+
+    \begin{itemize}
+    \item Disadvantage of CAVI method: As established in \cite{Goplerud_2024}, standard mean-field variational inference systematically underestimates posterior uncertainty in high-dimensional mixed models, since the degree of underestimation growing with the number of random effects. This motivates the choice of EM (Expectation - Maximization) algorithm with Laplace approximation over CAVI - type approaches.
+    \item High - dimensional models construction previously: 
+    \item LSS (Low sample support) settings: The sample size is not much larger than the data dimensionality.
+        
+    \end{itemize}
 	\chapter{Methodology}
     \label{chap:methodology}
     \section{Data Structure and Notation}
     \label{sec:data}
-    \begin{comment}
+\begin{comment}
 	Consider a set of observations which fall into a collection of $J$ groups and let $\lambda_{jq}$ denotes the vector-valued random effect for group $j$. Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
 	\begin{itemize}
 		\item $j=1,2,\dots ,m$: index of groups
@@ -72,9 +80,9 @@
 	\end{comment}
 	\label{sec:decomp}
 Consider any counting data $\bm{Y}$, whose $i$-th observation $\bm{y}_{ij}$ falls into $j$-th group with the covariate vector $\bm{x}_{ij}\in \mathbb{R}^{R}$ includes other information of the observatrion of $R$ dimensions. Let $Q$ denote the number of categories for the count choices, that is, $\bm{y}_{ij}\in \mathbb{R}^{Q}$ and  $\bigl(\bm{p}_{ijq}\bigr)_{q=1}^{Q}$ denote the probability vector for $Q$ categories.  For each observation $\bm{y}_{ij}$, $n_{ij}=\sum_{q=1}^{ Q} y_{ijq}$ denotes the total number of the count.
-\begin{comment}
-    Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
-\end{comment}
+
+Each observation belongs to only a single group. The vector $Y_{ij}=(Y_{ijq})_{q=1}^{Q}$ denotes the $Q\times 1$ vector response for observation $i$ in group $j$ with the probability vector $p_{ij}=(p_{ijq})_{q=1}^{Q}$, where $p_{ijq}=\frac{\lambda_{jq}\zeta_{ijq}}{\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}}$. 
+
 \medskip
 \noindent Table~\ref{tab:notation} summarises the index conventions
 used throughout.

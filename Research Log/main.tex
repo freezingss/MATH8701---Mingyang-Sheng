@@ -55,7 +55,8 @@
     \begin{itemize}
     \item Disadvantage of CAVI method: As established in \cite{Goplerud_2024}, standard mean-field variational inference systematically underestimates posterior uncertainty in high-dimensional mixed models, since the degree of underestimation growing with the number of random effects. This motivates the choice of EM (Expectation - Maximization) algorithm with Laplace approximation over CAVI - type approaches.
     \item High - dimensional models construction previously: 
-    \item LSS (Low sample support) settings: The sample size is not much larger than the data dimensionality.
+    \item LSS (Low sample support) settings: The sample size is not much larger than the data dimensionality. In such LSS settings, convergence issues may arise when applying the EM algorithm for GMM. Namely, the update of the covariance matrix at each step is no longer necessarily invertible or poorly conditioned, leading the M - step to be ill - defined. \cite{houdouin2023regularizedemalgorithm}
+    \item 
         
     \end{itemize}
 	\chapter{Methodology}

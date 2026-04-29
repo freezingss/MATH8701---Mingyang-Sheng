@@ -54,9 +54,7 @@
 
     \begin{itemize}
     \item Disadvantage of CAVI method: As established in \cite{Goplerud_2024}, standard mean-field variational inference systematically underestimates posterior uncertainty in high-dimensional mixed models, since the degree of underestimation growing with the number of random effects. This motivates the choice of EM (Expectation - Maximization) algorithm with Laplace approximation over CAVI - type approaches.
-    \item High - dimensional models construction previously: 
-    \item LSS (Low sample support) settings: The sample size is not much larger than the data dimensionality. In such LSS settings, convergence issues may arise when applying the EM algorithm for GMM. Namely, the update of the covariance matrix at each step is no longer necessarily invertible or poorly conditioned, leading the M - step to be ill - defined. \cite{houdouin2023regularizedemalgorithm}
-    \item 
+    \item LSS (Low sample support) settings: The sample size is not much larger than the data dimensionality. In such LSS settings, convergence issues may arise when applying the EM algorithm for GMM. Namely, the update of the covariance matrix at each step is no longer necessarily invertible or poorly conditioned, leading the M - step to be ill-defined\cite{houdouin2023regularizedemalgorithm}.
         
     \end{itemize}
 	\chapter{Methodology}
@@ -156,10 +154,10 @@ The log-likelihood of the multinomial model with unknown probability vector $\bm
 \end{itemize}
 We define the probability as the normalized product of these two quantities:
 \begin{equation}
-    p_{ijq}=\dfrac{\lambda_{jq}\,\zeta_{iq}}{\sum_{q'=1}^{Q} \lambda_{jq'}\,\zeta_{iq'}}
+    p_{ijq}=\dfrac{\lambda_{jq}\,\zeta_{ijq}}{\sum_{q'=1}^{Q} \lambda_{jq'}\,\zeta_{ijq'}}
     \label{eq:prob_product}
 \end{equation}
-Here we do the seperability assumption that the probability is determined by two terms. The joint term related to both indices $i,j,q$ leads unreadable issue and expensive costs when $Q$ is large. The complexity reduces from $O(m\,n\,Q)$ to $O(m\,Q+n\,Q)$, which simplifies the computation cost.
+Here we do the seperable assumption that the probability is determined by two terms. The joint term related to both indices $i,j,q$ leads unreadable issue and expensive costs when $Q$ is large. The complexity reduces from $O(m\,n\,Q)$ to $O(m\,Q+n\,Q)$, which simplifies the computation cost.
 \subsection{Connection to Poisson Representation}
 \label{subsec:poisson_connection}
 For the multinomial distribution obtained from $\bm{Y}$, it can be surrogated by the sum of the Poisson distribution given the total number.

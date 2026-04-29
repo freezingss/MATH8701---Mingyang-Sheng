@@ -1,0 +1,98 @@
+\documentclass[]{report}
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+%\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[a4paper, margin=1in]{geometry}
+% Useful packages
+\setcounter{secnumdepth}{3}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{bbm}
+\usepackage{pifont} 
+\usepackage{booktabs}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{graphicx}
+\usepackage{subcaption} 
+\usepackage{array}
+\bibliographystyle{plain}
+\usepackage{float}
+\usepackage{lipsum} % For dummy text
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+%opening
+% \title{Random effects for high-dimensional correlated multinomial regression}
+
+\begin{document}
+	
+\thispagestyle{empty}
+
+Let $\bm{y}_{ij} \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector for observation $i$ in group $j(i)$. For each observation $i$, we have an injection mapping $j(i) \in \{1, 2, \ldots, J\}$. Define $\mathcal{I}_j = \{i : j(i) = j\}$ and $I_j = |\mathcal{I}_j|$, so that the total number of observations satisfies $I = \sum_{j=1}^J I_j$.
+The observed data arise from a Multinomial distribution: conditional on the group-level random effects $\boldsymbol{\lambda}_{j}$ and the total count $y_{ij+} = \sum_{q=1}^Q y_{ijq}$,
+\begin{equation}
+    \bm{y}_{ij} \mid \boldsymbol{\lambda}_{j},\, y_{ij+} 
+    \sim \text{Multinomial}\left(y_{ij+},\, \boldsymbol{\pi}_{ij}\right),
+    \qquad 
+    \pi_{ijq} = \frac{\lambda_{jq}\,\exp(v_{ij}^\top \phi_q)}
+    {\sum_{q'=1}^Q \lambda_{jq'}\,\exp(v_{ij}^\top \phi_{q'})}
+\end{equation}
+By the Poisson-Multinomial equivalence, inference on $\boldsymbol{\pi}_{ij}$ under the Multinomial model is equivalent to inference under the following Poisson surrogate model:
+\begin{equation}
+    y_{ijq} \mid \bm{\lambda}_{j} \overset{\text{ind}}{\sim} 
+    \mathcal{P}\!\left(\delta_i\,\lambda_{jq}\,
+    \zeta_{ijq}\right), 
+    \qquad i = 1,\ldots,I, \quad j = j(i), \quad q = 1,\ldots,Q
+\end{equation}
+where $\zeta_{ijq}=\exp(v_{ij}^\top\phi_q)$ and $\delta_i > 0$ is a known offset. The group-level log-rates follow a factor analyzer:
+\begin{equation}
+    \log\boldsymbol{\lambda}_j = \boldsymbol{\mu} + \mathbf{B}\mathbf{f}_j 
+    + \boldsymbol{\epsilon}_j, \qquad 
+    \mathbf{f}_j \sim \mathcal{N}_K(\mathbf{0}, \mathbf{I}_K), \qquad
+    \boldsymbol{\epsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D})
+\end{equation}
+where $\mathbf{B} \in \mathbb{R}^{Q \times K}$ is the factor loading matrix and $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$. Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
+We have the following probability density function for $\bm{y}_{ij}$ with priors.
+\begin{itemize}
+    \item Automatic Relevance Determination (ARD) prior. This step is used to automatically choose the dimension $K$, where $\alpha_{k}\to \infty$ if the factor $k$ does not contribute to the data structure. That is, we have $\operatorname{B}_{qk}\sim \mathcal{N}(0,0)$.
+    \begin{equation}
+    \operatorname{B}_{qk}\mid \alpha_{k} \sim \mathcal{N}(0,\frac{1}{\alpha_{k}}), \quad \alpha_{k}\sim \operatorname{Gamma}(a_0, b_0), \quad k=1,2,\cdots , K_{\text{max}}
+    \end{equation}
+    \item Inverse-Gamma prior
+        \begin{equation}
+            d^{2}_{q}\sim \operatorname{Inverse-Gamma}(c_0, e_0), \quad q=1,2,\cdots , Q
+        \end{equation}
+    \item $\phi_q$ Lasso regularization 
+        \begin{equation}
+            -I\lambda_{r}\sum_{q=1}^{Q} \|\phi_{q}\|_1
+        \end{equation}
+\end{itemize}
+With the full parameter space $\Theta=\{\phi_q, \bm{\mu}, \bm{\operatorname{B}}, \bm{\operatorname{D}}, \bm{\alpha}\}$, the penalized Q-function is:
+\begin{equation}
+    \mathcal{Q}(\Theta \mid \Theta^{(t)}) = \sum_{j=1}^{J} \mathbb{E}_{\mathbf{f}_j \mid \mathbf{Y}_j, \Theta^{(t)}} \left[ \ell_c(\Theta; \mathbf{f}_j) \right] + \text{pen}(\Theta)
+\end{equation}
+with the complete likelihood 
+\begin{equation}
+    \ell_c(\Theta; \mathbf{f}_j) = \sum_{i \in \mathcal{I}_j} \sum_{q=1}^{Q} \left[ y_{iq} \left( \mu_q + \mathbf{b}_q^\top \mathbf{f}_j + v_i^\top \phi_q \right) - \delta_i \, e^{\mu_q + \mathbf{b}_q^\top \mathbf{f}_j + d_q^2/2 + v_{i}^\top \phi_q} \right] - \frac{1}{2} \|\mathbf{f}_j\|^2
+\end{equation}
+and penalization with initial $K_{\text{max}}$
+\begin{equation}
+    \text{pen}(\Theta) = -\frac{1}{2} \sum_{k=1}^{K_{\max}} \alpha_k \|\mathbf{b}_k\|^2 + \frac{Q}{2} \log \alpha_k + (a_0 - 1) \log \alpha_k - b_0 \alpha_k - \sum_{q=1}^{Q} \left[ (c_0 + 1) \log d_q^2 + \frac{e_0}{d_q^2} \right] - I\lambda \sum_{q=1}^{Q} \|\phi_q\|_1
+\end{equation}
+Starting with an initial value $\Theta^{(0)}$, the iterative maximization of penalized conditional expected likelihood of the complete data leads to sequence that ascents the penalized likelihood, i.e., 
+
+
+
+
+\end{document}

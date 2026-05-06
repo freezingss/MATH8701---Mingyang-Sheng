@@ -39,30 +39,35 @@
 	
 \thispagestyle{empty}
 
-Let $\bm{y}_{ij} \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector for observation $i$ in group $j(i)$. For each observation $i$, we have an injection mapping $j(i) \in \{1, 2, \ldots, J\}$. Define $\mathcal{I}_j = \{i : j(i) = j\}$ and $I_j = |\mathcal{I}_j|$, so that the total number of observations satisfies $I = \sum_{j=1}^J I_j$.
-The observed data arise from a Multinomial distribution: conditional on the group-level random effects $\boldsymbol{\lambda}_{j}$ and the total count $y_{ij+} = \sum_{q=1}^Q y_{ijq}$,
+\section{A Framework for Poisson Structure}
+Let $\bm{y}_{ij} \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector for observation $i$ in group $j(i)$ with $Q$ categories. For each observation $i$, we have an injection mapping $j(i) \in \{1, 2, \ldots, J\}$. Define $\mathcal{I}_j = \{i : j(i) = j\}$ and $I_j = |\mathcal{I}_j|$, so that the total number of observations satisfies $I = \sum_{j=1}^J I_j$. Conditional on the multinomial sums $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$ and vector-valued random effect $\bm{\lambda}_{j}=\bigl(\lambda_{jq}\bigr)_{q=1}^{Q}$ for group $j$, the counts $\bm{y}_{ij}$ are independently multinomially distributed for each observation $i$, i.e.
 \begin{equation}
-    \bm{y}_{ij} \mid \boldsymbol{\lambda}_{j},\, y_{ij+} 
-    \sim \text{Multinomial}\left(y_{ij+},\, \boldsymbol{\pi}_{ij}\right),
-    \qquad 
-    \pi_{ijq} = \frac{\lambda_{jq}\,\exp(v_{ij}^\top \phi_q)}
-    {\sum_{q'=1}^Q \lambda_{jq'}\,\exp(v_{ij}^\top \phi_{q'})}
+    \bm{y}_{ij} \mid  y_{ij+} , \bm{\lambda}_{ij}
+    \sim \operatorname{Multinomial}\left(y_{ij+},\, \bm{p}_{ij}\right),
 \end{equation}
-By the Poisson-Multinomial equivalence, inference on $\boldsymbol{\pi}_{ij}$ under the Multinomial model is equivalent to inference under the following Poisson surrogate model: 
+Given the random effects, we treat $y_{ij+}$ as random and assume
 \begin{equation}
-    y_{ijq} \mid \bm{\lambda}_{j} \overset{\text{ind}}{\sim} 
-    \mathcal{P}\!\left(\delta_i\,\lambda_{jq}\,
-    \zeta_{ijq}\right), 
-    \qquad i = 1,\ldots,I, \quad j = j(i), \quad q = 1,\ldots,Q
+    y_{ij+}\mid \bm{\lambda}_{j}\sim \operatorname{Poisson}(\delta_{ij}\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}),
 \end{equation}
-where $\zeta_{ijq}=\exp(v_{ij}^\top\phi_q)$ and $\delta_i > 0$ is a known offset. The group-level log-rates follow a factor analyzer:
+independently for each $i$ and $j$. This gives\cite{lee2017poissontrickextensionsfitting} 
+\begin{equation}
+    y_{ijq}\mid \lambda_{jq}\sim \operatorname{Poisson}(\delta_{ij}\lambda_{jq}\zeta_{ijq}),
+\end{equation}
+independently for each $i$ and $q$. Random effects are unobserved naturally, thus \textcite{lee2017poissontrickextensionsfitting} obtained the marginal distribution by integrating out the random effects and expressed the closed-form of the marginal likelihood of the approximating Poisson surrogate model with the assumption for the gamma distribution of the random effects.
+Our approach takes a fundamentally different route rather than marginalizing out the random effects. We explicitly decompose the random effects through a factor analyzer
 \begin{equation}
     \log\boldsymbol{\lambda}_j = \boldsymbol{\mu} + \mathbf{B}\mathbf{f}_j 
-    + \boldsymbol{\epsilon}_j, \qquad 
-    \mathbf{f}_j \sim \mathcal{N}_K(\mathbf{0}, \mathbf{I}_K), \qquad
+    + \boldsymbol{\epsilon}_j, \quad 
+    \mathbf{f}_j \sim \mathcal{N}_K(\mathbf{0}, \mathbf{I}_K), \quad
     \boldsymbol{\epsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D})
 \end{equation}
 where $\mathbf{B} \in \mathbb{R}^{Q \times K}$ is the factor loading matrix and $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$. Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
+
+
+
+where $\zeta_{ijq}=\exp(v_{ij}^\top\phi_q)$ and $\delta_i > 0$ is a known offset. The group-level log-rates follow a factor analyzer:
+
+
 We have the following probability density function for $\bm{y}_{ij}$ with priors.
 \begin{itemize}
     \item Automatic Relevance Determination (ARD) prior. This step is used to automatically choose the dimension $K$, where $\alpha_{k}\to \infty$ if the factor $k$ does not contribute to the data structure. That is, we have $\operatorname{B}_{qk}\sim \mathcal{N}(0,0)$.
@@ -78,7 +83,6 @@ We have the following probability density function for $\bm{y}_{ij}$ with priors
             -I\lambda_{r}\sum_{q=1}^{Q} \|\phi_{q}\|_1
         \end{equation}
 \end{itemize}
-With the full parameter space $\Theta=\{\phi_q, \bm{\mu}$, $\bm{\operatorname{B}}, $\bm{\operatorname{D}}, $\bm{\alpha}\}$, the penalized Q-function is:
 \begin{equation}
     \mathcal{Q}(\Theta \mid \Theta^{(t)}) = \sum_{j=1}^{J} \mathbb{E}_{\mathbf{f}_j \mid \mathbf{Y}_j, \Theta^{(t)}} \left[ \ell_c(\Theta; \mathbf{f}_j) \right] + \text{pen}(\Theta)
 \end{equation}

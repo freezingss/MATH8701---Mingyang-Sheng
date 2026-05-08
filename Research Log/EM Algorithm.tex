@@ -13,6 +13,8 @@
 \usepackage{natbib}
 \usepackage{indentfirst}
 \usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}  
 \usepackage{amsthm}
 \usepackage{bbm}
 \usepackage{pifont} 
@@ -80,44 +82,100 @@ Marginalizing over $\bm{f}_{j}$, the marginal distribution of $\log \boldsymbol{
 \begin{equation}
 		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{\top}+\mathbf{D}
 \end{equation}
-Also, the parameter $\delta_{ij}$ is a known offset and $\zeta_{iq}$ is a positive individual-specified function of covariate $\bm{v}_{i}$ and fixed effect $\bm{\gamma}$. To simplify the structure, we first assume that $\bm{\mathbf{D}}=\sigma^{2}\mathbf{I}_{Q}$. This assumption captures the idiosyncratic variation, while suppose it to be homogeneous, thus we reduce $Q$ unknown parameters to just one variance parameter $\sigma$. 
+Also, the parameter $\delta_{ij}$ is a known offset and $\zeta_{iq}$ is a positive individual-specified function of covariate $\bm{v}_{i}$ and fixed effect $\bm{\gamma}$. To simplify the structure, we first assume that $\bm{\mathbf{D}}=\sigma^{2}\mathbf{I}_{Q}$for all groups. This assumption captures the idiosyncratic variation, while suppose it to be homogeneous, thus we reduce $Q$ unknown parameters to just one variance parameter $\sigma$. 
 \begin{comment}
 Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
 \end{comment}
 \subsection{Algorithm}
 Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]^{\top}$ and parameter space $\Theta=\{\bm{\mu},\mathbf{B}, \mathbf{D}\}$. Before introducing our approach, we recall the classic EM algorithm. In latent variable models, it is common to assume we can only obtain samples from $\bm{y}$ while $\bm{f}$, called latent variable, cannot be observed. Consider the marginal distribution of $\bm{y}$ as
 \begin{equation}
-    y_{\Theta}(\bm{y}):= \int_{\mathcal{F}} p_{\Theta}(\bm{y},\bm{f};\Theta)\, d\bm{f}.
+    y_{\Theta}(\bm{y}):= \int_{\mathcal{F}} p_{\Theta}(\bm{y},\bm{f})\, d\bm{f}.
 \end{equation}
 where
 \begin{equation}
-    p_{\Theta}(\bm{y}_{j},\bm{f}_{j};\Theta)=p(\bm{f}_{j})\cdot \prod_{i\in \mathcal{I}_{j}}\prod_{q=1}^{Q} p(y_{ijq}\mid \bm{f}_{j};\Theta)
+    p_{\Theta}(\bm{y}_{j},\bm{f}_{j})=p(\bm{f}_{j})\cdot \prod_{i\in \mathcal{I}_{j}} p(\bm{y}_{ij}\mid \bm{f}_{j})
 \end{equation}
-We want to estimate the model parameter $\Theta$, so we consider the maximum likelihood estimation 
+We want to estimate the model parameter $\Theta$, so we consider the maximum likelihood estimation on $J$ groups level
 \begin{equation}
-    \hat{\Theta}=\arg\max\limits_{\Theta \in \Omega}h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J})
+    \hat{\Theta}=\arg\max\limits_{\Theta \in \Omega}h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J}),
     \label{eq:mle1}
 \end{equation}
-where 
+where we take the average value of groups to reduce the quantity of log-likelihood sum
 \begin{equation}
     h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J}):=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\Theta}(\bm{y}_{j}).
 \end{equation}
-In many settings, the objective function \ref{eq:mle1} is highly nonconvex, thus computationally inefficient to solve it directly. Instead, we consider the lower bound of $ h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J})$ which is more friendly to evaluate and optimize. For any $\tilde{\Theta}\in \Omega$, we have 
+In many settings, the objective function \ref{eq:mle1} is highly nonconvex and thus computationally inefficient to solve directly. Instead, we consider the lower bound of $ h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J})$ which is more suitable to evaluate and optimize. Let $f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})$ denote the conditional distribution of the latent variable $\bm{f}_{j}$ given the observation $\bm{y}_{ij}$ and the complete observation at the group-level $\bm{y}_{j}:=\{\bm{y}_{ij}\}_{i\in \mathcal{I}_{j}}$. For any $\tilde{\Theta}\in \Omega$, we have 
 \begin{equation}
     \begin{aligned}
-    h(\tilde{\Theta}; \bm{y}_{1},\cdots,\bm{y}_{J})&=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\tilde{\Theta}}(\bm{y}_{j})=\dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \log \int_{\mathcal{F}} p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})\, d\bm{f}_{j}\\
-    &= \dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \log \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\dfrac{p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})}{f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})}\,d\bm{f}_{j}\\
-    &\geq \dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\log \dfrac{p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})}{f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})}\,d\bm{f}_{j}\\
-    &= \dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\log p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})\,d\bm{f}_{j}-\int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\log f_{\Theta}(\bm{f}_{ij},\bm{y}_{ij})\,d\bm{f}_{j},
+    h(\tilde{\Theta}; \bm{y}_{1},\cdots,\bm{y}_{J})&=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\tilde{\Theta}}(\bm{y}_{j})=\dfrac{1}{J} \sum_{j=1}^{J} \log \int_{\mathcal{F}} \Bigl[\prod_{i\in \mathcal{I}_{j}}p_{\tilde{\Theta}}(\bm{y}_{ij}\mid \bm{f}_{j})\Bigr]p(\bm{f}_{j})\, d\bm{f}_{j}\\
+    &= \dfrac{1}{J} \sum_{j=1}^{J} \log \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\dfrac{p_{\tilde{\Theta}}(\bm{y}_{j},\bm{f}_{j})}{f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})}\,d\bm{f}_{j}\\
+    &\geq \dfrac{1}{J} \sum_{j=1}^{J} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log \dfrac{p_{\tilde{\Theta}}(\bm{y}_{j},\bm{f}_{j})}{f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})}\,d\bm{f}_{j}\\
+    &= \dfrac{1}{J} \sum_{j=1}^{J} \Bigl[\int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log p_{\tilde{\Theta}}(\bm{y}_{j},\bm{f}_{j})\,d\bm{f}_{j}-\int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log f_{\Theta}(\bm{f}_{j},\bm{y}_{j})\,d\bm{f}_{j}\Bigr],
 \end{aligned}
 \end{equation}
-where the inequality follows from Jensen's inequality. 
+where the inequality follows from Jensen's inequality. (\textcolor{red}{This proof needs to clarify conditional independence assumption that $\bm{y}_{ij}\perp\!\!\!\perp \bm{y}_{i'j} \mid \bm{f}_{j}$ for any $i\neq i'\in \mathcal{I}_{j}$.}) Notice that only the first term contains parameter $\tilde{\Theta}$, we define it as the Q-function, i.e.,
+\begin{equation}
+    Q_{J}(\tilde{\Theta}\mid \Theta):=\dfrac{1}{J} \sum_{j=1}^{J} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log p_{\tilde{\Theta}}(\bm{y}_{j},\bm{f}_{j})\,d\bm{f}_{j}.
+    \label{eq: Q_function}
+\end{equation}
+One iteration of EM algorithm mapping $\Theta^{(t)}$ to $\Theta^{(t+1)}$ consists the following two steps:
+\begin{itemize}
+    \item E-step: Compute the function $ Q_{J}(\Theta\mid \Theta^{(t)})$ given $\Theta^{(t)}$.
+    \item M-step: Compute $\Theta^{(t+1)}=\arg\max\limits_{\Theta \in \Omega}Q_{J}(\Theta\mid \Theta^{(t)})$.
+\end{itemize}
+The mapping $\mathcal{M}_{J}:\Omega \to \Omega$ denotes the above algorithm
+\begin{equation}
+    \mathcal{M}_{J}(\Theta):=\arg\max\limits_{\tilde{\Theta} \in \Omega}Q_{J}(\tilde{\Theta}\mid \Theta).
+\end{equation}
+and the mapping of the population level $\mathcal{M}:\Omega \to \Omega$ when $J\to \infty$ as
+\begin{equation}
+    \mathcal{M}(\Theta):=\arg\max\limits_{\tilde{\Theta} \in \Omega}Q_{J}(\tilde{\Theta}\mid \Theta).
+\end{equation}
+Generally, \cite{yi2015regularizedemalgorithmsunified} established two reasons that the classic EM procedure is not applicable to the high-dimensional case where $QK\gg J$. First, the group-level M-step $\mathcal{M}_{J}(\Theta)$ is usually far from the population-level mapping $\mathcal{M}(\Theta)$ with an insufficient number of groups relative to the number of categories. Even if the initial parameter $\Theta^{*}$, $\mathcal{M}_{J}(\Theta^{*})$ is not a meaningful estimation of $\Theta^{*}$, as the estimation error $\lVert \mathcal{M}_{J}(\Theta^{*})-\mathcal{M}(\Theta^{*}) \rVert_F$ can be much larger than the signal strength $\lVert \Theta^{*} \rVert_F$.  Second, in some models, $\mathcal{M}_{J}(\Theta)$ is not even well-defined.
+Thus, we introduce the regularized EM algorithm that is designed to overcome the high-dimensional challenge.
+\begin{algorithm}[H]
+\caption{High Dimensional Regularized EM Algorithm \cite{yi2015regularizedemalgorithmsunified}} 
+\begin{algorithmic}[1]
+
+\Require Observations $\{\bm{y}_{ij}\}_{i\in \mathcal{I}_{j},j=1,\cdots,J}$, regularizer $R$, number of iterations $T$, 
+initial parameter $\Theta^{(0)}=\{\bm{\mu}^{(0)},\mathbf{B}^{(0)},\sigma^{(0)}\}$, initial regularization parameter $\vartheta_{J}^{(0)}$, 
+estimated statistical error $\Delta$, contractive factor $\kappa < 1$.
+
+\For{$t = 1,2,\ldots,T$}
+
+\State \textbf{Regularization parameter update:}
+\[
+\vartheta_{J}^{(t)} \leftarrow \kappa \vartheta_{J}^{(t-1)} + \Delta .
+\]
+
+\State \textbf{E-step:} Compute $Q_{J}(\Theta \mid \Theta^{(t-1)})$ given $\Theta^{(t-1)}$ according to \ref{eq: Q_function}.
+
+\State \textbf{Regularized M-step:}
+\[
+\Theta^{(t)}
+\leftarrow
+\arg\max_{\Theta \in \Omega}
+Q_{J}(\Theta \mid \Theta^{(t-1)})
+-
+\vartheta_{J}^{(t)} \cdot R(\Theta).
+\]
+
+\EndFor
+
+\Ensure $\Theta^{(T)}$.
+
+\end{algorithmic}
+\end{algorithm}
+\begin{comment}
+Second, the M-step update for $\mathbf{B}$ is not well defined when $QK\gg J$. Specifically, the Hessian of $Q_{n}$ with respect to $\mathbf{B}$ involves a $QK\times QK$ matrix that is rank-deficient when the number of groups $J$ is insufficient relative to $Q\times K$, making the unconstrained maximization ill-posed.
+\end{comment}
+\begin{comment}
 \section{Identifiability Theory}
 \subsection{Overview and Structure of the Identifiability Problem}
 The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for $\mathbf{R} \in 
 \mathcal{O}(K)$ leads to the same model, since $\mathbf{BR}(\mathbf{BR})^\top = \mathbf{BB}^\top$. The identifiable quantity is therefore $\boldsymbol{\Sigma} = \mathbf{BB}^\top + \mathbf{D}$, which decomposes into a rank-$K$ component capturing cross-category co-variation driven by latent factors and a diagonal component $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$ capturing category-specific idiosyncratic variation not attributable to the latent factors. This decomposition distinguishes our model from \citet{chiquet2018variational}, who specify $\boldsymbol{\Sigma} = \mathbf{BB}^\top$ without the diagonal term. The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \citep{anderson1956}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
 To uniquely determine $\mathbf{B}$, we impose the identification condition and assume the upper triangular entries of $\mathbf{B}$ are set to zero and the diagonal entries are positive. Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
-
+\end{comment}
 
 
 

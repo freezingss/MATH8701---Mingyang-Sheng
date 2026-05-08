@@ -10,6 +10,7 @@
 \setcounter{secnumdepth}{3}
 \usepackage{amsmath}
 \usepackage{xcolor}
+\usepackage{natbib}
 \usepackage{indentfirst}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -21,7 +22,7 @@
 \usepackage{graphicx}
 \usepackage{subcaption} 
 \usepackage{array}
-\bibliographystyle{plain}
+\bibliographystyle{plainnat}
 \usepackage{float}
 \usepackage{lipsum} % For dummy text
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
@@ -40,7 +41,8 @@
 \thispagestyle{empty}
 
 \section{A Framework for Poisson Structure}
-Let $\bm{y}_{ij} \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector for observation $i$ in group $j(i)$ with $Q$ categories. For each observation $i$, we have an injection mapping $j(i) \in \{1, 2, \ldots, J\}$. Define $\mathcal{I}_j = \{i : j(i) = j\}$ and $I_j = |\mathcal{I}_j|$, so that the total number of observations satisfies $I = \sum_{j=1}^J I_j$. Conditional on the multinomial sums $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$ and vector-valued random effect $\bm{\lambda}_{j}=\bigl(\lambda_{jq}\bigr)_{q=1}^{Q}$ for group $j$, the counts $\bm{y}_{ij}$ are independently multinomially distributed for each observation $i$, i.e.
+\subsection{Setup}
+Let $\bm{y}_{ij} \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector for observation $i$ in group $j(i)$ with $Q$ categories. For each observation $i$, we have an injection mapping $j(i) \in \{1, 2, \ldots, J\}$. Define $\mathcal{I}_j = \{i : j(i) = j\}$ and $I_j = |\mathcal{I}_j|$, so that the total number of observations satisfies $I = \sum_{j=1}^J I_j$. Conditional on the multinomial sums $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$ and vector-valued random effect $\bm{\lambda}_{j}=(\lambda_{jq})_{q=1}^{Q}$ for group $j$, the counts $\bm{y}_{ij}$ are independently multinomial distributed for each observation $i$, i.e.
 \begin{equation}
     \bm{y}_{ij} \mid  y_{ij+} , \bm{\lambda}_{ij}
     \sim \operatorname{Multinomial}\left(y_{ij+},\, \bm{p}_{ij}\right),
@@ -49,55 +51,76 @@ Given the random effects, we treat $y_{ij+}$ as random and assume
 \begin{equation}
     y_{ij+}\mid \bm{\lambda}_{j}\sim \operatorname{Poisson}(\delta_{ij}\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}),
 \end{equation}
-independently for each $i$ and $j$. This gives\cite{lee2017poissontrickextensionsfitting} 
+independently for each $i$ and $j$. The result given by \cite{lee2017poissontrickextensionsfitting} shows
 \begin{equation}
-    y_{ijq}\mid \lambda_{jq}\sim \operatorname{Poisson}(\delta_{ij}\lambda_{jq}\zeta_{ijq}),
+    y_{ijq}\mid \lambda_{jq}\sim \operatorname{Poisson}(\delta_{ij}\lambda_{jq}\zeta_{iq}),
 \end{equation}
-independently for each $i$ and $q$. Random effects are unobserved naturally, thus \textcite{lee2017poissontrickextensionsfitting} obtained the marginal distribution by integrating out the random effects and expressed the closed-form of the marginal likelihood of the approximating Poisson surrogate model with the assumption for the gamma distribution of the random effects.
-Our approach takes a fundamentally different route rather than marginalizing out the random effects. We explicitly decompose the random effects through a factor analyzer
-\begin{equation}
-    \log\boldsymbol{\lambda}_j = \boldsymbol{\mu} + \mathbf{B}\mathbf{f}_j 
-    + \boldsymbol{\epsilon}_j, \quad 
-    \mathbf{f}_j \sim \mathcal{N}_K(\mathbf{0}, \mathbf{I}_K), \quad
-    \boldsymbol{\epsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D})
-\end{equation}
-where $\mathbf{B} \in \mathbb{R}^{Q \times K}$ is the factor loading matrix and $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$. Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
-
-
-
-where $\zeta_{ijq}=\exp(v_{ij}^\top\phi_q)$ and $\delta_i > 0$ is a known offset. The group-level log-rates follow a factor analyzer:
-
-
-We have the following probability density function for $\bm{y}_{ij}$ with priors.
+independently for each $i$ and $q$. Random effects are unobserved naturally, thus \citet{lee2017poissontrickextensionsfitting} obtained the marginal distribution by integrating out the random effects and expressed the closed-form of the marginal likelihood of the approximating Poisson surrogate model with the assumption for the gamma distribution of the random effects. Our approach takes a fundamentally different route rather than marginalizing out the random effects. We extend the pPCA method on the distribution of poissons and assume \cite{chiquet2018variational}:
 \begin{itemize}
-    \item Automatic Relevance Determination (ARD) prior. This step is used to automatically choose the dimension $K$, where $\alpha_{k}\to \infty$ if the factor $k$ does not contribute to the data structure. That is, we have $\operatorname{B}_{qk}\sim \mathcal{N}(0,0)$.
-    \begin{equation}
-    \operatorname{B}_{qk}\mid \alpha_{k} \sim \mathcal{N}(0,\frac{1}{\alpha_{k}}), \quad \alpha_{k}\sim \operatorname{Gamma}(a_0, b_0), \quad k=1,2,\cdots , K_{\text{max}}
-    \end{equation}
-    \item Inverse-Gamma prior
-        \begin{equation}
-            d^{2}_{q}\sim \operatorname{Inverse-Gamma}(c_0, e_0), \quad q=1,2,\cdots , Q
-        \end{equation}
-    \item $\phi_q$ Lasso regularization 
-        \begin{equation}
-            -I\lambda_{r}\sum_{q=1}^{Q} \|\phi_{q}\|_1
-        \end{equation}
+    \item there exists a (low) $k$-dimensional (linear) subspace in the natural canonical parameter space where some latent variable $\bm{z}_{ij}$ lies,
+    \item observations $y_{ijq}$ are independently generated in observation space with $y_{ijq}\mid z_{ijq}\sim \operatorname{Poisson}\bigl(\exp(z_{ijq})\bigr)$.
 \end{itemize}
+The latter is linked to $\mathbb{E}[\bm{y}_{ij}\mid \bm{z}_{ij}]$ through the canonical link function $g$, which uses the similar connection in generalized linear models. Specifically, the latent variable $z_{ijq}$ corresponds to $\log \lambda_{jq}$ since the canonical link function for the poisson family is the logarithm. Therefore, we place a factor structure on the log random effects at the group level based on the assumption in \cite{chiquet2018variational}:
 \begin{equation}
-    \mathcal{Q}(\Theta \mid \Theta^{(t)}) = \sum_{j=1}^{J} \mathbb{E}_{\mathbf{f}_j \mid \mathbf{Y}_j, \Theta^{(t)}} \left[ \ell_c(\Theta; \mathbf{f}_j) \right] + \text{pen}(\Theta)
-\end{equation}
-with the complete likelihood 
+    \begin{aligned}
+        & \log \bm{\lambda}_{j}=\bm{\mu}+\mathbf{B}\mathbf{f}_j+\bm{\epsilon}_{j},\\
+        & \mathbf{f}_j \sim \mathcal{N}_k(\mathbf{0}, \bm{I}_k),\\
+        & \bm{\epsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D}),
+    \end{aligned}
+\end{equation} 
+where:
+\begin{itemize}
+\item $\boldsymbol{\mu}=(\mu_{1},\dots ,\mu_{Q})^{\top}\in \mathbb{R}^{Q}$ denotes the population-level baseline log-intensities for each category,
+\item $\mathbf{B}=[\boldsymbol{b}_{1},\dots ,\boldsymbol{b}_{K}]\in \mathbb{R}^{Q\times K}$ denotes the factor loading matrix with $K\ll Q$ and its entries $\mathbf{B}_{qk}$ denote the loading of category $q$'s random effect to the $k$-th latent factor,
+\item $\bm{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores distributed identically and independently，
+\item $\bm{\epsilon}_{j}\in \mathbb{R}^{Q}$ denotes the error term that captures category-specific variation in $\boldsymbol{\lambda}_{j}$ that is not attributable to $K$ latent factors. 
+\end{itemize}
+This structure captures the systematic co-variation of probabilities across categories within a group. A natural starting point is to model $\bm{\lambda}_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{\top}$ with $Q$ independent random effects. However, this assumption becomes increasingly restrictive as $Q$ grows. Independence implies a diagonal cross-category covariance structure for $\bm{\lambda}_{j}$, which rules out the systematic co-variance of the probabilities that occurs in high-dimensional data. We relax this assumption by positing that the cross-category co-variation is driven by a smaller number of latent factors rather than being independently determined for each categories. 
+Marginalizing over $\bm{f}_{j}$, the marginal distribution of $\log \boldsymbol{\lambda}_{j}$ is:
 \begin{equation}
-    \ell_c(\Theta; \mathbf{f}_j) = \sum_{i \in \mathcal{I}_j} \sum_{q=1}^{Q} \left[ y_{iq} \left( \mu_q + \mathbf{b}_q^\top \mathbf{f}_j + v_i^\top \phi_q \right) - \delta_i \, e^{\mu_q + \mathbf{b}_q^\top \mathbf{f}_j + d_q^2/2 + v_{i}^\top \phi_q} \right] - \frac{1}{2} \|\mathbf{f}_j\|^2
+		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{\top}+\mathbf{D}
 \end{equation}
-and penalization with initial $K_{\text{max}}$
+Also, the parameter $\delta_{ij}$ is a known offset and $\zeta_{iq}$ is a positive individual-specified function of covariate $\bm{v}_{i}$ and fixed effect $\bm{\gamma}$. To simplify the structure, we first assume that $\bm{\mathbf{D}}=\sigma^{2}\mathbf{I}_{Q}$. This assumption captures the idiosyncratic variation, while suppose it to be homogeneous, thus we reduce $Q$ unknown parameters to just one variance parameter $\sigma$. 
+\begin{comment}
+Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
+\end{comment}
+\subsection{Algorithm}
+Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]^{\top}$ and parameter space $\Theta=\{\bm{\mu},\mathbf{B}, \mathbf{D}\}$. Before introducing our approach, we recall the classic EM algorithm. In latent variable models, it is common to assume we can only obtain samples from $\bm{y}$ while $\bm{f}$, called latent variable, cannot be observed. Consider the marginal distribution of $\bm{y}$ as
 \begin{equation}
-    \text{pen}(\Theta) = -\frac{1}{2} \sum_{k=1}^{K_{\max}} \alpha_k \|\mathbf{b}_k\|^2 + \frac{Q}{2} \log \alpha_k + (a_0 - 1) \log \alpha_k - b_0 \alpha_k - \sum_{q=1}^{Q} \left[ (c_0 + 1) \log d_q^2 + \frac{e_0}{d_q^2} \right] - I\eta \sum_{q=1}^{Q} \|\phi_q\|_1
+    y_{\Theta}(\bm{y}):= \int_{\mathcal{F}} p_{\Theta}(\bm{y},\bm{f};\Theta)\, d\bm{f}.
 \end{equation}
-Starting with an initial value $\Theta^{(0)}$, the iterative maximization of penalized conditional expected likelihood of the complete data leads to sequence that ascents the penalized likelihood, i.e., 
+where
+\begin{equation}
+    p_{\Theta}(\bm{y}_{j},\bm{f}_{j};\Theta)=p(\bm{f}_{j})\cdot \prod_{i\in \mathcal{I}_{j}}\prod_{q=1}^{Q} p(y_{ijq}\mid \bm{f}_{j};\Theta)
+\end{equation}
+We want to estimate the model parameter $\Theta$, so we consider the maximum likelihood estimation 
+\begin{equation}
+    \hat{\Theta}=\arg\max\limits_{\Theta \in \Omega}h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J})
+    \label{eq:mle1}
+\end{equation}
+where 
+\begin{equation}
+    h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J}):=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\Theta}(\bm{y}_{j}).
+\end{equation}
+In many settings, the objective function \ref{eq:mle1} is highly nonconvex, thus computationally inefficient to solve it directly. Instead, we consider the lower bound of $ h(\Theta; \bm{y}_{1},\cdots,\bm{y}_{J})$ which is more friendly to evaluate and optimize. For any $\tilde{\Theta}\in \Omega$, we have 
+\begin{equation}
+    \begin{aligned}
+    h(\tilde{\Theta}; \bm{y}_{1},\cdots,\bm{y}_{J})&=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\tilde{\Theta}}(\bm{y}_{j})=\dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \log \int_{\mathcal{F}} p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})\, d\bm{f}_{j}\\
+    &= \dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \log \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\dfrac{p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})}{f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})}\,d\bm{f}_{j}\\
+    &\geq \dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\log \dfrac{p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})}{f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})}\,d\bm{f}_{j}\\
+    &= \dfrac{1}{J} \sum_{j=1}^{J} \sum_{i\in \mathcal{I}_{j}} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\log p_{\tilde{\Theta}}(\bm{y}_{ij},\bm{f}_{j})\,d\bm{f}_{j}-\int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{ij})\log f_{\Theta}(\bm{f}_{ij},\bm{y}_{ij})\,d\bm{f}_{j},
+\end{aligned}
+\end{equation}
+where the inequality follows from Jensen's inequality. 
+\section{Identifiability Theory}
+\subsection{Overview and Structure of the Identifiability Problem}
+The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for $\mathbf{R} \in 
+\mathcal{O}(K)$ leads to the same model, since $\mathbf{BR}(\mathbf{BR})^\top = \mathbf{BB}^\top$. The identifiable quantity is therefore $\boldsymbol{\Sigma} = \mathbf{BB}^\top + \mathbf{D}$, which decomposes into a rank-$K$ component capturing cross-category co-variation driven by latent factors and a diagonal component $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$ capturing category-specific idiosyncratic variation not attributable to the latent factors. This decomposition distinguishes our model from \citet{chiquet2018variational}, who specify $\boldsymbol{\Sigma} = \mathbf{BB}^\top$ without the diagonal term. The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \citep{anderson1956}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
+To uniquely determine $\mathbf{B}$, we impose the identification condition and assume the upper triangular entries of $\mathbf{B}$ are set to zero and the diagonal entries are positive. Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
 
 
 
 
 
+\bibliography{reference}
 \end{document}

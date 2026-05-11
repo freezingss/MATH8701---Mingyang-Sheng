@@ -74,7 +74,7 @@ where:
 \begin{itemize}
 \item $\boldsymbol{\mu}=(\mu_{1},\dots ,\mu_{Q})^{\top}\in \mathbb{R}^{Q}$ denotes the population-level baseline log-intensities for each category,
 \item $\mathbf{B}=[\boldsymbol{b}_{1},\dots ,\boldsymbol{b}_{K}]\in \mathbb{R}^{Q\times K}$ denotes the factor loading matrix with $K\ll Q$ and its entries $\mathbf{B}_{qk}$ denote the loading of category $q$'s random effect to the $k$-th latent factor,
-\item $\bm{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores distributed identically and independently，
+\item $\bm{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores distributed identically and independently,
 \item $\bm{\epsilon}_{j}\in \mathbb{R}^{Q}$ denotes the error term that captures category-specific variation in $\boldsymbol{\lambda}_{j}$ that is not attributable to $K$ latent factors. 
 \end{itemize}
 This structure captures the systematic co-variation of probabilities across categories within a group. A natural starting point is to model $\bm{\lambda}_{j}=(\lambda_{j1},\dots ,\lambda_{jQ})^{\top}$ with $Q$ independent random effects. However, this assumption becomes increasingly restrictive as $Q$ grows. Independence implies a diagonal cross-category covariance structure for $\bm{\lambda}_{j}$, which rules out the systematic co-variance of the probabilities that occurs in high-dimensional data. We relax this assumption by positing that the cross-category co-variation is driven by a smaller number of latent factors rather than being independently determined for each categories. 
@@ -87,7 +87,7 @@ Also, the parameter $\delta_{ij}$ is a known offset and $\zeta_{iq}$ is a positi
 Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
 \end{comment}
 \subsection{Algorithm}
-Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]^{\top}$ and parameter space $\Theta=\{\bm{\mu},\mathbf{B}, \mathbf{D}\}$. Before introducing our approach, we recall the classic EM algorithm. In latent variable models, it is common to assume we can only obtain samples from $\bm{y}$ while $\bm{f}$, called latent variable, cannot be observed. Consider the marginal distribution of $\bm{y}$ as
+Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]$ and parameter space $\Theta=\{\bm{\mu},\mathbf{B}, \sigma\}$. Before introducing our approach, we recall the classic EM algorithm. In latent variable models, it is common to assume we can only obtain samples from $\bm{y}$ while $\bm{f}$, called latent variable, cannot be observed. Consider the marginal distribution of $\bm{y}$ as
 \begin{equation}
     y_{\Theta}(\bm{y}):= \int_{\mathcal{F}} p_{\Theta}(\bm{y},\bm{f})\, d\bm{f}.
 \end{equation}
@@ -136,7 +136,7 @@ Thus, we introduce the regularized EM algorithm that is designed to overcome the
 \begin{algorithm}[H]
 \caption{High Dimensional Regularized EM Algorithm \cite{yi2015regularizedemalgorithmsunified}} 
 \begin{algorithmic}[1]
-
+ 
 \Require Observations $\{\bm{y}_{ij}\}_{i\in \mathcal{I}_{j},j=1,\cdots,J}$, regularizer $R$, number of iterations $T$, 
 initial parameter $\Theta^{(0)}=\{\bm{\mu}^{(0)},\mathbf{B}^{(0)},\sigma^{(0)}\}$, initial regularization parameter $\vartheta_{J}^{(0)}$, 
 estimated statistical error $\Delta$, contractive factor $\kappa < 1$.
@@ -169,7 +169,7 @@ Q_{J}(\Theta \mid \Theta^{(t-1)})
 \begin{comment}
 Second, the M-step update for $\mathbf{B}$ is not well defined when $QK\gg J$. Specifically, the Hessian of $Q_{n}$ with respect to $\mathbf{B}$ involves a $QK\times QK$ matrix that is rank-deficient when the number of groups $J$ is insufficient relative to $Q\times K$, making the unconstrained maximization ill-posed.
 \end{comment}
-\begin{comment}
+\begin{co
 \section{Identifiability Theory}
 \subsection{Overview and Structure of the Identifiability Problem}
 The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for $\mathbf{R} \in 

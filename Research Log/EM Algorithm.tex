@@ -82,12 +82,15 @@ Marginalizing over $\bm{f}_{j}$, the marginal distribution of $\log \boldsymbol{
 \begin{equation}
 		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{\top}+\mathbf{D}
 \end{equation}
-Also, the parameter $\delta_{ij}$ is a known offset and $\zeta_{iq}$ is a positive individual-specified function of covariate $\bm{v}_{i}$ and fixed effect $\bm{\gamma}$. To simplify the structure, we first assume that $\bm{\mathbf{D}}=\sigma^{2}\mathbf{I}_{Q}$for all groups. This assumption captures the idiosyncratic variation, while suppose it to be homogeneous, thus we reduce $Q$ unknown parameters to just one variance parameter $\sigma$. 
+Also, the parameter $\delta_{ij}$ is a known offset and $\zeta_{iq}$ is a positive individual-specified function of covariate $\bm{v}_{i}$ and fixed effect $\bm{\gamma}$. 
+\begin{comment}[model simplification, variance matrix D=\sigma\mathbf{I}]
+To simplify the structure, we first assume that $\bm{\mathbf{D}}=\sigma^{2}\mathbf{I}_{Q}$for all groups. This assumption captures the idiosyncratic variation, while suppose it to be homogeneous, thus we reduce $Q$ unknown parameters to just one variance parameter $\sigma$. 
+\end{comment}
 \begin{comment}
 Since $\mathbf{f}_j$ is unobserved, the marginal distribution of $y_{ijq}$ given $\mathbf{f}_j$ requires integrating out $\boldsymbol{\epsilon}_j$, which does not admit a closed form. This motivates the Laplace approximation in the E-step.
 \end{comment}
 \subsection{Algorithm}
-Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]$ and parameter space $\Theta=\{\bm{\mu},\mathbf{B}, \sigma\}$. Before introducing our approach, we recall the classic EM algorithm. In latent variable models, it is common to assume we can only obtain samples from $\bm{y}$ while $\bm{f}$, called latent variable, cannot be observed. Consider the marginal distribution of $\bm{y}$ as
+Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]$ and parameter space $\Theta=\{\bm{\mu},\mathbf{B}, \mathbf{D}\}$. Before introducing our approach, we recall the classic EM algorithm. In latent variable models, it is common to assume we can only obtain samples from $\bm{y}$ while $\bm{f}$, called latent variable, cannot be observed. Consider the marginal distribution of $\bm{y}$ as
 \begin{equation}
     y_{\Theta}(\bm{y}):= \int_{\mathcal{F}} p_{\Theta}(\bm{y},\bm{f})\, d\bm{f}.
 \end{equation}
@@ -131,14 +134,14 @@ and the mapping of the population level $\mathcal{M}:\Omega \to \Omega$ when $J\
 \begin{equation}
     \mathcal{M}(\Theta):=\arg\max\limits_{\tilde{\Theta} \in \Omega}Q_{J}(\tilde{\Theta}\mid \Theta).
 \end{equation}
-Generally, \cite{yi2015regularizedemalgorithmsunified} established two reasons that the classic EM procedure is not applicable to the high-dimensional case where $QK\gg J$. First, the group-level M-step $\mathcal{M}_{J}(\Theta)$ is usually far from the population-level mapping $\mathcal{M}(\Theta)$ with an insufficient number of groups relative to the number of categories. Even if the initial parameter $\Theta^{*}$, $\mathcal{M}_{J}(\Theta^{*})$ is not a meaningful estimation of $\Theta^{*}$, as the estimation error $\lVert \mathcal{M}_{J}(\Theta^{*})-\mathcal{M}(\Theta^{*}) \rVert_F$ can be much larger than the signal strength $\lVert \Theta^{*} \rVert_F$.  Second, in some models, $\mathcal{M}_{J}(\Theta)$ is not even well-defined.
-Thus, we introduce the regularized EM algorithm that is designed to overcome the high-dimensional challenge.
+Generally, \cite{yi2015regularizedemalgorithmsunified} established two reasons that the classic EM procedure is not applicable to the high-dimensional case where $QK\gg J$. First, the group-level M-step $\mathcal{M}_{J}(\Theta)$ is usually far from the population-level mapping $\mathcal{M}(\Theta)$ with an insufficient number of groups relative to the number of categories. Even if the initial parameter $\Theta^{*}$, $\mathcal{M}_{J}(\Theta^{*})$ is not a meaningful estimation of $\Theta^{*}$ as the estimation error $\lVert \mathcal{M}_{J}(\Theta^{*})-\mathcal{M}(\Theta^{*}) \rVert_F$ can be much larger than the signal strength $\lVert \Theta^{*} \rVert_F$.  Second, in some models, $\mathcal{M}_{J}(\Theta)$ is not even well-defined.
+Thus, we introduce the regularized EM algorithm that is designed to overcome challenges of high dimension.
 \begin{algorithm}[H]
 \caption{High Dimensional Regularized EM Algorithm \cite{yi2015regularizedemalgorithmsunified}} 
 \begin{algorithmic}[1]
  
 \Require Observations $\{\bm{y}_{ij}\}_{i\in \mathcal{I}_{j},j=1,\cdots,J}$, regularizer $R$, number of iterations $T$, 
-initial parameter $\Theta^{(0)}=\{\bm{\mu}^{(0)},\mathbf{B}^{(0)},\sigma^{(0)}\}$, initial regularization parameter $\vartheta_{J}^{(0)}$, 
+initial parameter $\Theta^{(0)}=\{\bm{\mu}^{(0)},\mathbf{B}^{(0)},\mathbf{D}^{(0)}\}$, initial regularization parameter $\vartheta_{J}^{(0)}$, 
 estimated statistical error $\Delta$, contractive factor $\kappa < 1$.
 
 \For{$t = 1,2,\ldots,T$}
@@ -169,13 +172,153 @@ Q_{J}(\Theta \mid \Theta^{(t-1)})
 \begin{comment}
 Second, the M-step update for $\mathbf{B}$ is not well defined when $QK\gg J$. Specifically, the Hessian of $Q_{n}$ with respect to $\mathbf{B}$ involves a $QK\times QK$ matrix that is rank-deficient when the number of groups $J$ is insufficient relative to $Q\times K$, making the unconstrained maximization ill-posed.
 \end{comment}
-\begin{co
+
+The proposed algorithm improves upon the high-dimensional EM algorithm of \cite{wang2015highdimensionalexpectationmaximizationalgorithm}, which implements the M-step via gradient ascent when the $\mathcal{Q}$ function does not admit a closed form. In contrast, our formulation exploits the block decomposition to obtain exact closed form updates for $\mathbf{D}$ and a structured proximal Newton step for $(\bm{\mu},\mathbf{B})$.
+
+Given the regularization parameter $\vartheta_{J}$, our regularized M-step is defined as:
+\begin{equation}
+    \mathcal{M}_{J}^{r}(\Theta):=\arg\max_{\Theta \in \Omega}
+Q_{J}(\tilde{\Theta} \mid \Theta)-\vartheta_{J} \cdot \mathcal{R}(\tilde{\Theta}),
+\end{equation}
+where $\mathcal{R}$ encourages a certain structure in the model parameter $\Theta^{*}$.
+
+The choice of regularization parameter $\vartheta_{J}^{(t)}$ plays an important role in controlling statistical and optimization error. \cite{yi2015regularizedemalgorithmsunified} used the quantity $\Delta=\mathcal{O}\bigl(\sqrt{\log p/n}\bigr)$ as default to show the target estimate error, where $p$ denotes the dimension of the data and $n$ denotes the number of observations. Following \cite{yi2015regularizedemalgorithmsunified}, we set $\Delta_{\bm{\mu},\mathbf{B}}=\mathcal{O}\bigl(\sqrt{\log Q/J}\bigr)$ as the target estimation error for $(\bm{\mu},\mathbf{B})$. This rate reflects a union bound over the Q component parameters and is consistent with the high-dimensional GLM error bounds of \cite{Negahban_2012}. Hence, the update of the parameter of penalty is given by:
+\begin{equation}
+    \vartheta_{n}^{(t)}=\kappa^{t}\vartheta_{J}^{(0)}+\dfrac{1-\kappa^{t}}{1-\kappa}\Delta_{\bm{\mu},\mathbf{B}}.
+\end{equation}
+where $\kappa\in (0,1)$ is the contractive factor governing the geometric decay of the optimisation error across iterations.
+\begin{proposition}[Block decomposition of the M-step]
+\label{prop:block_decomp}
+Given the E-step output $\{\tilde{\mathbf{f}}_j\}_{j=1}^J$, the Q-function admits the decomposition
+\begin{equation}
+    Q_J(\tilde{\Theta} \mid \Theta^{(t)})
+    = Q_J^{\mu,B}(\boldsymbol{\mu}, \mathbf{B} \mid \mathbf{D}^{(t)})
+    + Q_J^{D}(\mathbf{D} \mid \boldsymbol{\mu}^{(t+1)},
+      \mathbf{B}^{(t+1)})
+    + \mathrm{const},
+\end{equation}
+where the two components contain only the parameters $(\boldsymbol{\mu}, \mathbf{B})$ and $\mathbf{D}$ respectively, with no shared free parameters between them.
+\end{proposition}
+
+\begin{proof}
+
+\textbf{Step 1: Expansion of the Q-function.}
+
+By definition,
+\begin{equation}
+    Q_J(\Theta \mid \Theta^{(t)})
+    = \frac{1}{J}\sum_{j=1}^J \int_{\mathcal{F}}
+      f_{\Theta^{(t)}}(\mathbf{f}_j \mid \mathbf{y}_j)\,
+      \log p_{\Theta}(\mathbf{y}_j, \mathbf{f}_j)
+      \, d\mathbf{f}_j.
+\end{equation}
+Decomposing the joint log-likelihood as
+\begin{equation}
+    \log p_{\Theta}(\mathbf{y}_j, \mathbf{f}_j)
+    = \log p_{\Theta}(\mathbf{y}_j \mid \mathbf{f}_j)
+    + \log p(\mathbf{f}_j),
+\end{equation}
+the factor prior contributes $\log p(\mathbf{f}_j) = -\frac{1}{2}\|\mathbf{f}_j\|^2 + \mathrm{const}$, which is free of $\tilde{\Theta}$ and is absorbed into the constant term. For conditional likelihood, integrating out $\lambda_{jq}$ given $\mathbf{f}_j$ via the log-normal moment-generating function $\mathbb{E}[e^{\epsilon_{jq}}] = e^{d_q^2/2}$ for $\epsilon_{jq} \sim \mathcal{N}(0, d_q^2)$ gives
+\begin{equation}
+    \log p_{\tilde{\Theta}}(\mathbf{y}_j \mid \mathbf{f}_j)
+    = \sum_{i=1}^{n_j}\sum_{q=1}^Q
+      \Bigl[y_{ijq}\bigl(\mu_q + \mathbf{B}_{q\cdot}\mathbf{f}_j\bigr)
+      - \delta_{ij}\zeta_{ijq}\,
+      e^{\mu_q + \mathbf{B}_{q\cdot}\mathbf{f}_j + d_q^2/2}
+      \Bigr].
+\end{equation}
+Substituting into the Q-function and replacing $\mathbf{f}_j$ by the Laplace approximation sufficient statistic $\tilde{\mathbf{f}}_j \approx
+\mathbb{E}[\mathbf{f}_j \mid \mathbf{y}_j, \Theta^{(t)}]$ yields
+\begin{equation}
+\label{eq:Q_expanded}
+    Q_J(\Theta \mid \Theta^{(t)})
+    = \frac{1}{J}\sum_{j,i,q}
+      \Bigl[y_{ijq}\bigl(\mu_q + \mathbf{B}_{q\cdot}\tilde{\mathbf{f}}_j\bigr)
+      - \delta_{ij}\zeta_{ijq}\,
+      e^{\mu_q + \mathbf{B}_{q\cdot}\tilde{\mathbf{f}}_j + d_q^2/2}
+      \Bigr]
+    + \mathrm{const}.
+\end{equation}
+
+\textbf{Step 2: Identifying the separation structure.}
+
+In \eqref{eq:Q_expanded}, the term $d_q^2$ appears exclusively as the multiplicative scalar $e^{d_q^2/2}$ within the exponential, coupled with $(\mu_q, \mathbf{B}_{q\cdot})$. Under sequential coordinate ascent, fixing $\mathbf{D} = \mathbf{D}^{(t)}$ renders each $e^{d_q^{2(t)}/2}$ a known constant. The component of \eqref{eq:Q_expanded} involving only $(\boldsymbol{\mu}, \mathbf{B})$ is then
+\begin{equation}
+\label{eq:Q_muB}
+    Q_J^{\mu,B}(\boldsymbol{\mu}, \mathbf{B} \mid \mathbf{D}^{(t)})
+    := \frac{1}{J}\sum_{j,i,q}
+       \Bigl[y_{ijq}\bigl(\mu_q + \mathbf{B}_{q\cdot}\tilde{\mathbf{f}}_j\bigr)
+       - \delta_{ij}\zeta_{ijq}\,
+       e^{\mu_q + \mathbf{B}_{q\cdot}\tilde{\mathbf{f}}_j
+       + d_q^{2(t)}/2}\Bigr],
+\end{equation}
+which contains no free parameters from $\mathbf{D}$.
+
+After substituting $(\boldsymbol{\mu}^{(t+1)}, \mathbf{B}^{(t+1)})$, the contribution of $\mathbf{D}$ arises from the complete-data log-likelihood term associated with $\epsilon_{jq} \sim \mathcal{N}(0, d_q^2)$, giving
+\begin{equation}
+\label{eq:Q_D}
+    Q_J^{D}(\mathbf{D} \mid \boldsymbol{\mu}^{(t+1)},
+    \mathbf{B}^{(t+1)})
+    := -\frac{1}{2J}\sum_{q=1}^Q
+       \left[\frac{\mathcal{S}_q^{(t+1)}}{d_q^2}
+       + J\log d_q^2\right],
+\end{equation}
+where
+\begin{equation}
+    \mathcal{S}_q^{(t+1)}
+    = \sum_{j=1}^J\left[
+      \mathbf{B}_{q\cdot}^{(t+1)}
+      \hat{\mathbf{H}}_j^{-1}
+      \mathbf{B}_{q\cdot}^{(t+1)\top}
+      + \Bigl(\mu_q^{(t+1)}
+      + \mathbf{B}_{q\cdot}^{(t+1)}\tilde{\mathbf{f}}_j
+      - s_{jq}\Bigr)^2\right],
+\end{equation}
+with $s_{jq} = \log\hat{\lambda}_{jq}^{(t)}$, and \eqref{eq:Q_D} contains no free parameters from $(\boldsymbol{\mu}, \mathbf{B})$.
+
+\textbf{Step 3: The decomposition holds.}
+
+From \eqref{eq:Q_muB} and \eqref{eq:Q_D},
+\begin{equation}
+    Q_J(\tilde{\Theta} \mid \Theta^{(t)})
+    = Q_J^{\mu,B}(\boldsymbol{\mu}, \mathbf{B} \mid \mathbf{D}^{(t)})
+    + Q_J^{D}(\mathbf{D} \mid \boldsymbol{\mu}^{(t+1)},
+      \mathbf{B}^{(t+1)})
+    + \mathrm{const},
+\end{equation}
+with no shared free parameters between the two components. Furthermore, the penalty term $\vartheta^{J}^{(t)}\sum_{q=1}^Q\|\mathbf{B}_{q\cdot}\|_2$ contains only parameters from $\mathbf{B}$ and is therefore absorbed into $Q_J^{\mu,B}$, leaving the separation structure intact.
+\end{proof}
+
+  \begin{algorithm}[H]
+\caption{Penalised EM Algorithm for the Factor-Structured Multinomial Model}
+\label{alg:em_simple}
+\textbf{Input:} Counts $\{Y_{ijq}\}$, initial parameters $\Theta^{(0)} = (\boldsymbol{\mu}^{(0)}, \mathbf{B}^{(0)}, \mathbf{D}^{(0)})$, number of factors $K$, initial regularisation parameter $\lambda_B^{(0)}$, contractive factor $\kappa < 1$, statistical error floor $\Delta_B$, tolerance $\varepsilon > 0$.
+\begin{algorithmic}[1]
+\For{$t = 1, 2, \ldots$ until convergence}
+    \State \textbf{E-step:} For each $j$, find posterior mode $\hat{\mathbf{f}}_j^{(t)}$ by Newton--Raphson on the log-posterior and compute $\hat{\mathbf{H}}_j^{(t)} = \mathbf{H}_j(\hat{\mathbf{f}}_j^{(t)})$ via the Hessian formula (5.4); set sufficient statistics  $\tilde{\mathbf{f}}_j = \hat{\mathbf{f}}_j^{(t)}$.
+    \State \textbf{Update $\lambda_B^{(t)}$:}
+    $\lambda_B^{(t)} \leftarrow \kappa\,\lambda_B^{(t-1)} + \Delta_B$.
+    \State \textbf{M-step $(\mathrm{M}_1)$:} Update $(\boldsymbol{\mu}^{(t)}, \mathbf{B}^{(t)})$ by one proximal Newton--Raphson step on the score equations with group lasso penalty $\lambda_B^{(t)}\sum_q\|\mathbf{b}_q\|_2$, then orthogonalise via QR to enforce $(\mathcal{C})$.
+    \State \textbf{M-step $(\mathrm{M}_2)$:} Set $d_q^{2(t)} = \mathcal{S}_q^{(t)} / J$ for each $q = 1,\ldots,Q$ via the closed-form update.
+\EndFor
+\end{algorithmic}
+\textbf{Output:} $\hat{\Theta} = (\hat{\boldsymbol{\mu}}, \hat{\mathbf{B}}, \hat{\mathbf{D}})$.
+\end{algorithm}
+    
+
 \section{Identifiability Theory}
 \subsection{Overview and Structure of the Identifiability Problem}
-The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for $\mathbf{R} \in 
-\mathcal{O}(K)$ leads to the same model, since $\mathbf{BR}(\mathbf{BR})^\top = \mathbf{BB}^\top$. The identifiable quantity is therefore $\boldsymbol{\Sigma} = \mathbf{BB}^\top + \mathbf{D}$, which decomposes into a rank-$K$ component capturing cross-category co-variation driven by latent factors and a diagonal component $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$ capturing category-specific idiosyncratic variation not attributable to the latent factors. This decomposition distinguishes our model from \citet{chiquet2018variational}, who specify $\boldsymbol{\Sigma} = \mathbf{BB}^\top$ without the diagonal term. The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \citep{anderson1956}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
-To uniquely determine $\mathbf{B}$, we impose the identification condition and assume the upper triangular entries of $\mathbf{B}$ are set to zero and the diagonal entries are positive. Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
-\end{comment}
+The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for orthodolody matrix $\mathbf{R}$ leads to the same model, since $\mathbf{BR}(\mathbf{BR})^\top = \mathbf{BB}^\top$. The identifiable quantity is therefore $\boldsymbol{\Sigma} = \mathbf{BB}^\top + \mathbf{D}$, which decomposes into a rank-$K$ component capturing cross-category co-variation driven by latent factors and a diagonal component $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$ capturing category-specific idiosyncratic variation not attributable to the latent factors. This decomposition distinguishes our model from \citet{chiquet2018variational}, who specify $\boldsymbol{\Sigma} = \mathbf{BB}^\top$ without the diagonal term. 
+
+Determine the matrices given $\bm{\Sigma}$ is a classic problem. \cite{Anderson1956StatisticalII} imposed a necessary condition for identification for $\mathbf{D}$ is that each column of loading matrix $\mathbf{B}$ has at least three nonzero elements. That requires the category number $p$ is greater than the latent factor number $k$ plus 2, which is satisfies automatically under the high-dimensional setup. Also, we assume that the diagonal entries of $\mathbf{D}$ are strictly positive, which avoids the Heywood case. The identification problem of $\mathbf{B}$ can be determined uniquely based on our assumption that the upper triangular entries of $\mathbf{B}$ are set to zero and the diagonal entries are positive.
+
+The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \cite{Anderson1956StatisticalII}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
+
+Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
+
+\begin{theorem}[Identification of $(\mathbf{B},\mathbf{D})$.]
+    Suppose $\bm{\Sigma}=\mathbf{BB}^{\top}+\mathbf{D}$ with diagonal matrix $\mathbf{D}=\operatorname{diag}(d_{1}^{2},\cdots, d_{Q}^{2})$. Under the identification constraint $\mathbf{B}^{\top}\mathbf{D}^{-1}\mathbf{B}=\bm{\Lambda}$ with $\Lambda_{11}>\cdots >\Lambda_{KK}>0$. If $Q>2K+1$, then the decomposition $(\mathbf{B},\mathbf{D})$ is unique up to column sign changes of $\mathbf{B}$.
+\end{theorem}
 
 
 

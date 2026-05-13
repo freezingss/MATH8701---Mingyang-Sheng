@@ -116,7 +116,7 @@ In many settings, the objective function \ref{eq:mle1} is highly nonconvex and t
     &= \dfrac{1}{J} \sum_{j=1}^{J} \Bigl[\int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log p_{\tilde{\Theta}}(\bm{y}_{j},\bm{f}_{j})\,d\bm{f}_{j}-\int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log f_{\Theta}(\bm{f}_{j},\bm{y}_{j})\,d\bm{f}_{j}\Bigr],
 \end{aligned}
 \end{equation}
-where the inequality follows from Jensen's inequality. (\textcolor{red}{This proof needs to clarify conditional independence assumption that $\bm{y}_{ij}\perp\!\!\!\perp \bm{y}_{i'j} \mid \bm{f}_{j}$ for any $i\neq i'\in \mathcal{I}_{j}$.}) Notice that only the first term contains parameter $\tilde{\Theta}$, we define it as the Q-function, i.e.,
+where the inequality follows from Jensen's inequality. \textcolor{red}{This proof needs to clarify conditional independence assumption that $\bm{y}_{ij}\perp\!\!\!\perp \bm{y}_{i'j} \mid \bm{f}_{j}$ for any $i\neq i'\in \mathcal{I}_{j}$.} Notice that only the first term contains parameter $\tilde{\Theta}$, we define it as the Q-function, i.e.,
 \begin{equation}
     Q_{J}(\tilde{\Theta}\mid \Theta):=\dfrac{1}{J} \sum_{j=1}^{J} \int_{\mathcal{F}} f_{\Theta}(\bm{f}_{j}\mid \bm{y}_{j})\log p_{\tilde{\Theta}}(\bm{y}_{j},\bm{f}_{j})\,d\bm{f}_{j}.
     \label{eq: Q_function}
@@ -184,9 +184,11 @@ where $\mathcal{R}$ encourages a certain structure in the model parameter $\Thet
 
 The choice of regularization parameter $\vartheta_{J}^{(t)}$ plays an important role in controlling statistical and optimization error. \cite{yi2015regularizedemalgorithmsunified} used the quantity $\Delta=\mathcal{O}\bigl(\sqrt{\log p/n}\bigr)$ as default to show the target estimate error, where $p$ denotes the dimension of the data and $n$ denotes the number of observations. Following \cite{yi2015regularizedemalgorithmsunified}, we set $\Delta_{\bm{\mu},\mathbf{B}}=\mathcal{O}\bigl(\sqrt{\log Q/J}\bigr)$ as the target estimation error for $(\bm{\mu},\mathbf{B})$. This rate reflects a union bound over the Q component parameters and is consistent with the high-dimensional GLM error bounds of \cite{Negahban_2012}. Hence, the update of the parameter of penalty is given by:
 \begin{equation}
-    \vartheta_{n}^{(t)}=\kappa^{t}\vartheta_{J}^{(0)}+\dfrac{1-\kappa^{t}}{1-\kappa}\Delta_{\bm{\mu},\mathbf{B}}.
+    \vartheta_{J}^{(t)}=\kappa^{t}\vartheta_{J}^{(0)}+\dfrac{1-\kappa^{t}}{1-\kappa}\Delta_{\bm{\mu},\mathbf{B}}.
 \end{equation}
-where $\kappa\in (0,1)$ is the contractive factor governing the geometric decay of the optimisation error across iterations.
+where $\kappa\in (0,1)$ is the contractive factor governing the geometric decay of the optimization error across iterations.
+As has been shown by \cite{article}, the maximization over the set of loading matrix and the variance matrix of the latent factor is independent of the maximization over the variance matrix, because they involve distinct factors in the likelihood. \textcolor{red}{They do the separation directly on normal distributed observations. A formal verification that the Poisson log-likelihood satisfies the same separability conditions as the Gaussian case is deferred to the Supplementary Material.}
+\begin{comment}
 \begin{proposition}[Block decomposition of the M-step]
 \label{prop:block_decomp}
 Given the E-step output $\{\tilde{\mathbf{f}}_j\}_{j=1}^J$, the Q-function admits the decomposition
@@ -286,25 +288,35 @@ From \eqref{eq:Q_muB} and \eqref{eq:Q_D},
       \mathbf{B}^{(t+1)})
     + \mathrm{const},
 \end{equation}
-with no shared free parameters between the two components. Furthermore, the penalty term $\vartheta^{J}^{(t)}\sum_{q=1}^Q\|\mathbf{B}_{q\cdot}\|_2$ contains only parameters from $\mathbf{B}$ and is therefore absorbed into $Q_J^{\mu,B}$, leaving the separation structure intact.
+with no shared free parameters between the two components. Furthermore, the penalty term $\vartheta_{J}^{(t)}\sum_{q=1}^Q\|\mathbf{B}_{q\cdot}\|_2$ contains only parameters from $\mathbf{B}$ and is therefore absorbed into $Q_J^{\mu,B}$, leaving the separation structure intact.
 \end{proof}
+\end{comment}
+
+\begin{equation}
+    \mathcal{S}_q^{(t+1)} = \sum_{j=1}^J \left[\mathbf{B}_{q\cdot}^{(t+1)} \hat{\mathbf{H}}_j^{-1} \mathbf{B}_{q\cdot}^{(t+1)\top}+ \left(\mu_q^{(t+1)} + \mathbf{B}_{q\cdot}^{(t+1)}\tilde{\mathbf{f}}_j- s_{jq}\right)^2\right],
+\end{equation}
+where $s_{jq}=\log \hat{\lambda}_{jq}^{(t)}$.
+\begin{equation}
+    \max_{\mu_q,\, \mathbf{B}_{q\cdot}} \;\sum_{j=1}^J \left[y_{j+q}\!\left(\mu_q + \mathbf{B}_{q\cdot}\tilde{\mathbf{f}}_j\right)- e^{\mu_q + d_q^{2(t)}/2}\sum_{i=1}^{n_j} \delta_{ij}\zeta_{ijq}\,e^{\mathbf{B}_{q\cdot}\tilde{\mathbf{f}}_j}\right]- \lambda^{(t)} \|\mathbf{B}_{q\cdot}\|_2,\quad q = 1, \ldots, Q.
+\end{equation}
 
   \begin{algorithm}[H]
-\caption{Penalised EM Algorithm for the Factor-Structured Multinomial Model}
+\caption{Penalized EM Algorithm for the Factor-Structured Multinomial Model}
 \label{alg:em_simple}
-\textbf{Input:} Counts $\{Y_{ijq}\}$, initial parameters $\Theta^{(0)} = (\boldsymbol{\mu}^{(0)}, \mathbf{B}^{(0)}, \mathbf{D}^{(0)})$, number of factors $K$, initial regularisation parameter $\lambda_B^{(0)}$, contractive factor $\kappa < 1$, statistical error floor $\Delta_B$, tolerance $\varepsilon > 0$.
+\textbf{Input:} Counts $\{y_{ijq}\}$, initial parameters $\Theta^{(0)} = (\boldsymbol{\mu}^{(0)}, \mathbf{B}^{(0)}, \mathbf{D}^{(0)})$, number of factors $K$, initial regularization parameter $\vartheta^{(0)}$, contractive factor $\kappa < 1$, statistical error floor $\Delta_{\bm{\mu},\mathbf{B}}$.
 \begin{algorithmic}[1]
 \For{$t = 1, 2, \ldots$ until convergence}
-    \State \textbf{E-step:} For each $j$, find posterior mode $\hat{\mathbf{f}}_j^{(t)}$ by Newton--Raphson on the log-posterior and compute $\hat{\mathbf{H}}_j^{(t)} = \mathbf{H}_j(\hat{\mathbf{f}}_j^{(t)})$ via the Hessian formula (5.4); set sufficient statistics  $\tilde{\mathbf{f}}_j = \hat{\mathbf{f}}_j^{(t)}$.
-    \State \textbf{Update $\lambda_B^{(t)}$:}
-    $\lambda_B^{(t)} \leftarrow \kappa\,\lambda_B^{(t-1)} + \Delta_B$.
-    \State \textbf{M-step $(\mathrm{M}_1)$:} Update $(\boldsymbol{\mu}^{(t)}, \mathbf{B}^{(t)})$ by one proximal Newton--Raphson step on the score equations with group lasso penalty $\lambda_B^{(t)}\sum_q\|\mathbf{b}_q\|_2$, then orthogonalise via QR to enforce $(\mathcal{C})$.
+    \State \textbf{E-step:} For each $j$, find posterior mode $\hat{\mathbf{f}}_j^{(t)}$ by Newton--Raphson on the log-posterior and compute Hessian matrix $\hat{\mathbf{H}}_j^{(t)} = \mathbf{H}_j(\hat{\mathbf{f}}_j^{(t)})$; set sufficient statistics  $\tilde{\mathbf{f}}_j = \hat{\mathbf{f}}_j^{(t)}$.
+    \State \textbf{Update $\vartheta_{J}^{(t)}$:}
+    $\vartheta_{J}^{(t)} \leftarrow \kappa\,\vartheta_{J}^{(t-1)} +\Delta_{\bm{\mu},\mathbf{B}}$.
+    \State \textbf{M-step $(\mathrm{M}_1)$:} Update $(\boldsymbol{\mu}^{(t)}, \mathbf{B}^{(t)})$ by one proximal Newton--Raphson step on the score equations with group lasso penalty $\vartheta_{J}^{(t)}\sum_q\|\mathbf{b}_q\|_2$, then orthogonalize via QR to enforce $(\mathcal{C})$.
     \State \textbf{M-step $(\mathrm{M}_2)$:} Set $d_q^{2(t)} = \mathcal{S}_q^{(t)} / J$ for each $q = 1,\ldots,Q$ via the closed-form update.
 \EndFor
 \end{algorithmic}
 \textbf{Output:} $\hat{\Theta} = (\hat{\boldsymbol{\mu}}, \hat{\mathbf{B}}, \hat{\mathbf{D}})$.
 \end{algorithm}
-    
+
+The sequential structure of the M-step follows necessarily from the dependency between the two parameter blocks rather than being an arbitrary computational choice. Specifically, in sub-problem 
 
 \section{Identifiability Theory}
 \subsection{Overview and Structure of the Identifiability Problem}
@@ -315,11 +327,11 @@ Determine the matrices given $\bm{\Sigma}$ is a classic problem. \cite{Anderson1
 The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \cite{Anderson1956StatisticalII}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
 
 Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
-
+\begin{comment}
 \begin{theorem}[Identification of $(\mathbf{B},\mathbf{D})$.]
     Suppose $\bm{\Sigma}=\mathbf{BB}^{\top}+\mathbf{D}$ with diagonal matrix $\mathbf{D}=\operatorname{diag}(d_{1}^{2},\cdots, d_{Q}^{2})$. Under the identification constraint $\mathbf{B}^{\top}\mathbf{D}^{-1}\mathbf{B}=\bm{\Lambda}$ with $\Lambda_{11}>\cdots >\Lambda_{KK}>0$. If $Q>2K+1$, then the decomposition $(\mathbf{B},\mathbf{D})$ is unique up to column sign changes of $\mathbf{B}$.
 \end{theorem}
-
+\end{comment}
 
 
 

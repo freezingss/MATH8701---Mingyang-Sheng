@@ -1,0 +1,278 @@
+\documentclass[]{report}
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+%\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[a4paper, margin=1in]{geometry}
+% Useful packages
+\setcounter{secnumdepth}{3}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{natbib}
+\usepackage{indentfirst}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}  
+\usepackage{amsthm}
+\usepackage{bbm}
+\usepackage{pifont} 
+\usepackage{booktabs}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{graphicx}
+\usepackage{subcaption} 
+\usepackage{array}
+\bibliographystyle{plainnat}
+\usepackage{float}
+\usepackage{lipsum} % For dummy text
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+%opening
+% \title{Random effects for high-dimensional correlated multinomial regression}
+
+\begin{document}
+	
+\thispagestyle{empty}
+
+\section{A Framework for Poisson Structure}
+
+\subsection{Setup and Model Specification}
+Let $\bm{y}_{ij} = (y_{ij1}, \dots, y_{ijQ})^\top \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector representing category-specific choices for observation unit $i$ nested within group $j(i)$, spanning $Q$ distinct categories. For each observation $i$, let $j(i) \in \{1, 2, \ldots, J\}$ map the individual to its corresponding cluster group. We define the group-specific index set as $\mathcal{I}_j = \{i : j(i) = j\}$ with its cardinality denoted by $I_j = |\mathcal{I}_j|$, such that the aggregate sample size satisfies $I = \sum_{j=1}^J I_j$. 
+
+Conditioned on individual-specific multinomial total counts $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$ and a latent group-level random-effects vector $\bm{\lambda}_{j}=(\lambda_{jq})_{q=1}^{Q}$ for group $j$, it is assumed that the count vectors $\bm{y}_{ij}$ are independently distributed according to a conditional multinomial distribution:
+\begin{equation}
+    \bm{y}_{ij} \mid  y_{ij+} , \bm{\lambda}_{j}
+    \sim \operatorname{Multinomial}\left(y_{ij+},\, \bm{p}_{ij}\right).
+\end{equation}
+To resolve the cross-category coupling induced by the multinomial denominator field, we conceptualize aggregate capacity $y_{ij+}$ as a random variable conditional on the latent group effect, positing that
+\begin{equation}
+    y_{ij+}\mid \bm{\lambda}_{j}\sim \operatorname{Poisson}\left(\delta_{ij}\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}\right),
+\end{equation}
+independently for each $i$ and $j$. Leveraging the foundational Poisson-Multinomial Equivalence (PME) results extended by \cite{lee2017poissontrickextensionsfitting}, the joint distribution can be exactly factorized into category-by-category independent Poisson elements:
+\begin{equation}
+    y_{ijq}\mid \lambda_{jq}\sim \operatorname{Poisson}(\delta_{ij}\lambda_{jq}\zeta_{ijq}),
+\end{equation}
+independently for each individual $i$ and category $q$. 
+
+Although classical implementations \cite{lee2017poissontrickextensionsfitting} structurally marginalize random effects under a conjugate Gamma distribution to arrive at a closed-form marginal Negative Binomial specification, such treatments become computationally restrictive and lose structural information in high-dimensional settings. Our approach departs fundamentally from marginalization. We extend the probabilistic principal component analysis paradigm (pPCA) within the Poisson canonical space \cite{chiquet2018variational} by projecting the unobserved random effects onto a lower-dimensional latent subspace.
+
+Specifically, the latent variables enter the intensity field through the canonical logarithmic link function associated with the Poisson family. We project a factor structure directly onto the log-transformed group-level random effects:
+\begin{equation}
+    \begin{aligned}
+        & \log \bm{\lambda}_{j}=\bm{\mu}+\mathbf{B}\mathbf{f}_j+\bm{\epsilon}_{j},\\
+        & \mathbf{f}_j \sim \mathcal{N}_K(\mathbf{0}, \bm{I}_K),\\
+        & \bm{\epsilon}_j \sim \mathcal{N}_Q(\mathbf{0}, \mathbf{D}),
+    \end{aligned}
+\end{equation} 
+where:
+\begin{itemize}
+\item $\boldsymbol{\mu}=(\mu_{1},\dots ,\mu_{Q})^{\top}\in \mathbb{R}^{Q}$ captures the baseline logarithmic intensities deterministic at population-level in the category field.
+\item $\mathbf{B}=[\boldsymbol{b}_{1},\dots ,\boldsymbol{b}_{K}]\in \mathbb{R}^{Q\times K}$ represents the factor loading matrix with a heavily compressed dimension $K\ll Q$, where entry $b_{qk}$ quantifies the sensitivity of category $q$'s log-intensity to the $k$-th shared latent factor.
+\item $\bm{f}_{j}\in \mathbb{R}^{K}$ denotes the group-specific latent factor scores, distributed identically and independently across groups.
+\item $\bm{\epsilon}_{j}\in \mathbb{R}^{Q}$ represents the idiosyncratic error vector, which captures residual category-specific variations within group $j$ that cannot be explained by the $K$ common dense components. 
+\end{itemize}
+
+This low-rank factorization structurally parameterizes the systematic co-variation of choices across high-dimensional categories. While modeling $\bm{\lambda}_{j}$ with $Q$ completely independent random effects provides a natural starting point, such a formulation implicitly forces a diagonal cross-category covariance structure. This restriction completely rules out the cross-elasticities and product substitution patterns typical of high-dimensional empirical choice data. By integrating over the latent factor scores $\bm{f}_{j}$, the marginal distribution of the log-random effects emerges as:
+\begin{equation}
+		\log \boldsymbol{\lambda}_{j}\sim \mathcal{N}_{Q}(\boldsymbol{\mu}, \boldsymbol{\Sigma}),\quad \boldsymbol{\Sigma}=\mathbf{B}\mathbf{B}^{\top}+\mathbf{D}.
+\end{equation}
+Here, the scalar $\delta_{ij}$ operates as a known exposure offset, and $\zeta_{ijq}$ represents a strictly positive individual-specific function conining observed covariates $\bm{v}_{i}$ and fixed effects $\bm{\gamma}$.
+
+\subsection{The High-Dimensional Computational Bottleneck}
+Consider a multinomial count framework where the target vector of category choices for individual $i$ inside group $j$ is denoted by $\bm{y}_{ij}=(y_{ij1}, \dots, y_{ijQ})^\top$. The total realized choice capacity for this observation unit is aggregated as $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$. Under a standard random-effects multinomial logit specification, the conditional probability that a choice falls into category $q$ is governed by:
+\begin{equation}
+    p_{ijq}=\frac{\exp (\eta_{ijq})}{\sum_{q=1}^{Q}\exp (\eta_{ijq})},
+\end{equation}
+where $\eta_{ijq}=\mu_{q}+\lambda_{jq}+\zeta_{ijq}$ encapsulates the structural utility, comprising the baseline category intercept $\mu_{q}$, the latent group-specific factor effect $\lambda_{jq}$ and the observed covariate field $\zeta_{ijq}$. The corresponding conditional multinomial log-likelihood for the entire observation evaluates to:
+\begin{equation}
+    \ell_{M}(\bm{\theta})=\sum_{j}\sum_{i\in \mathcal{I}_{j}}\Bigl(\log y_{ij+}!-\sum_{q=1}^{Q}\log y_{ijq}!+\sum_{q=1}^{Q}y_{ijq}\eta_{ijq}-y_{ij+}\log \bigl(\sum_{q=1}^{Q}\exp (\zeta_{ijq})\bigr) \Bigr).
+\end{equation}
+The presence of the log-sum-of-exponentials term binds all $Q$ categories together within the denominator. As $Q\to \infty$, the cross-category coupling presents the isolation of parameter blocks, rendering the joint Hessian matrix dense and making simultaneous optimization computationally intractable.
+\subsection{The Possion-Multinomial Equivalence (PME) Transformation}
+To bypass this bottleneck, we exploit the Poisson-Multinomial Equivalence (PME) framework. Suppose the elements of the count vector are modeled as independent Poisson random variables, $y_{ijq}\sim \operatorname{Poisson}(\lambda_{ijq})$, where the latent intensity parameter $\lambda_{ijq}$ is parameterized multiplicatively via an individual-specific scaling intercept $\exp (\delta_{ij})$:
+\begin{equation}
+    \lambda_{ijq}=\exp (\delta_{ij}+\eta_{ijq})=\exp(\delta_{ij})\exp(\eta_{ijq}).
+\end{equation}
+The joint log-likelihood under this unconstrained Poisson regime is given by:
+\begin{equation}
+    \ell_{P}(\bm{\theta},\bm{\delta})=\sum_{j}\sum_{i\in \mathcal{I}_{j}}\sum_{q}\bigl\{y_{ijq}(\delta_{ij}+\eta_{ijq})-\exp (\delta_{ij}+\eta_{ijq})-\log y_{ijq}!\bigr\}.
+\end{equation}
+According to classical statistical theory, conditioning a set of independent Poisson variables on their empirical sum exactly reproduces the multinomial distribution. Formally, by imposing the structural constraint $\sum_{q=1}^Q y_{ijq} = y_{ij}$, we preserve an exact algebraic equivalence between the two likelihood fields up to a constant that is independent of the structural parameters $\bm{\theta}$. 
+\subsection{Analytical Profiling and Construction of $\delta_{ij}$}
+Because the individual-specific intercepts $\bm{\delta}=\{\delta_{ij}\}$ enter the Poisson log-likelihood additively, they can be profiled out analytically observation by observation. Taking the first-order partial derivative of $\ell_{P}$ with respect to a specific nuisance parameter $\delta_{ij}$ yields the following score equation:
+\begin{equation}
+    \frac{\partial \ell_{P}}{\partial \delta_{ij}}=\sum_{q}y_{ijq}-\sum_{q}\exp(\delta_{ij}+\eta_{ijq})=0.
+\end{equation}
+Substituting $y_{ij+}=\sum_{q}y_{ijq}$ into the score equation gives:
+\begin{equation}
+    y_{ij+}=\exp(\delta_{ij})\sum_{q}\exp(\eta_{ijq}).
+\end{equation}
+Isolating the exponential multiplier $\exp(\delta_{ij})$, we obtain:
+\begin{equation}
+    \exp(\delta_{ij})=\frac{y_{ij+}}{\sum_{q}\exp(\eta_{ijq})}.
+\end{equation}
+Taking the natural logarithm on both sides yields the explicit structural formula for the profile parameter $\delta_{ij}$:
+\begin{equation}
+    \delta_{ij}=\log y_{ij+}-\log \sum_{q}\exp(\eta_{ijq}). 
+\end{equation}
+The utility of $\delta_{ij}$ is driven by the foundational intuition of the Frisch-Waugh-Lovell (FWL) theorem, which guarantees that nuisance parameters can be algebraically partialed out via orthogonal projections. Our algorithm operationalizes this ``partialing out" philosophy in a non-linear optimization field via profile-likelihood scaling simialrly done by \cite{Correia_2020}.
+\subsection{Justification as an Estimation Offset}
+The analytical derivation of $\delta_{ij}$ serves two vital purposes within our high-dimensional estimation strategy:
+\begin{itemize}
+    \item Information Preserving Scaling: The term $\log y_{ij+}$ functions as an exposure control that directly scales the baseline Poisson intensity to match the idiosyncratic trial capacity of each individual. It mathematically captures the transition from binary indicator choice data to aggregated count data.
+    \item \textbf{Complete Cross-Category Decoupling:} When conditioning on the current updates of the latent factor field and fixed effects, $\delta_{ij}$ is entirely determined by known data and pre-calculated utilities. Consequently, it can be passed into category-by-category generalized linear model (GLM) routines as a fixed offset parameter. 
+\end{itemize}
+By defining the total offset field as:
+\begin{equation}
+    \text{offset}_{ijq}=\delta_{ij}+\lambda_{jq}=\log y_{ij+}-\log \sum_{q}\exp(\eta_{ijq})+\lambda_{jq},
+\end{equation}
+and the log-link function for the decoupled Poisson regression collapses to:
+\begin{equation}
+    \log (\lambda_{ijq})-\text{offset}_{ijq}=\mu_{q}+\zeta_{ijq}.
+\end{equation}
+This formulation structurally guarantees that the score equations for $\bm{\phi}_q$ and $\mu_q$ depend solely on category-specific variation. The $Q$-dimensional optimization problem is effectively partitioned into $Q$ independent, parallelizable, single-variable Poisson estimations, bypassing the high-dimensional denominator bottleneck entirely without losing any asymptotic statistical properties. 
+\subsection{Identifiability of Parameters}
+The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for orthodolody matrix $\mathbf{R}$ leads to the same model, since $\mathbf{BR}(\mathbf{BR})^\top = \mathbf{BB}^\top$. The identifiable quantity is therefore $\boldsymbol{\Sigma} = \mathbf{BB}^\top + \mathbf{D}$, which decomposes into a rank-$K$ component capturing cross-category co-variation driven by latent factors and a diagonal component $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$ capturing category-specific idiosyncratic variation not attributable to the latent factors. This decomposition distinguishes our model from \citet{chiquet2018variational}, who specify $\boldsymbol{\Sigma} = \mathbf{BB}^\top$ without the diagonal term. 
+
+Determine the matrices given $\bm{\Sigma}$ is a classic problem. \cite{Anderson1956StatisticalII} imposed a necessary condition for identification for $\mathbf{D}$ is that each column of loading matrix $\mathbf{B}$ has at least three nonzero elements. That requires the category number $p$ is greater than the latent factor number $k$ plus 2, which is satisfies automatically under the high-dimensional setup. Also, we assume that the diagonal entries of $\mathbf{D}$ are strictly positive, which avoids the Heywood case. The identification problem of $\mathbf{B}$ can be determined uniquely based on our assumption that the upper triangular entries of $\mathbf{B}$ are set to zero and the diagonal entries are positive.
+
+The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \cite{Anderson1956StatisticalII}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
+
+Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
+
+\section{Regularized Expectation-Maximization Algorithm with PME Profiling}
+Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]$ denote the factor loading matrix, and define the structural parameter space of primary interest as $\Theta=\{\bm{\mu},\mathbf{B}, \mathbf{D}\}$, where $\mathbf{D}$ represents the diagonal matrix of unique variances. In this high-dimensional latent variable architecture, direct optimization of the marginal likelihood is highly non-convex and computationally prohibitive due to the unobserved nature of both the latent factor vectors $\bm{f}_j$ and the high-dimensional group-specific nuisance parameters (or fixed effects) $\bm{\delta}_j$. Leveraging the Poisson-Multinomial Equivalence (PME) framework, the sample marginal log-likelihood across the $J$ independent groups is formalized as:
+\begin{equation}
+    h(\Theta, \bm{\delta}; \bm{y}_{1},\cdots,\bm{y}_{J}):=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\Theta, \bm{\delta}_j}(\bm{y}_{j}),
+\end{equation}
+where the group-level marginal distribution, conditioned on the high-dimensional intercept vector $\bm{\delta}_j$, is defined via the integral over the latent factor space $\mathcal{F}$:
+\begin{equation}
+    y_{\Theta, \bm{\delta}_j}(\bm{y}_{j}):= \int_{\mathcal{F}} p_{\Theta, \bm{\delta}_j}(\bm{y}_{j},\bm{f}_{j})\, d\bm{f}_{j} = \int_{\mathcal{F}} p(\bm{f}_{j})\cdot \prod_{i\in \mathcal{I}_{j}} p(\bm{y}_{ij}\mid \bm{f}_{j}; \bm{\delta}_j)\, d\bm{f}_{j}.
+\end{equation}
+
+To circumvent the non-convex direct optimization of $h(\Theta, \bm{\delta})$, we construct a surrogate lower bound leveraging Jensen's inequality. Let $f_{\Theta, \bm{\xi}_j}(\bm{f}_{j}\mid \bm{y}_{j})$ denote the true conditional posterior distribution of the latent factors given the full group-level data block $\bm{y}_{j}:=\{\bm{y}_{ij}\}_{i\in \mathcal{I}_{j}}$. For any arbitrary parameter candidate $\tilde{\Theta}\in \Omega$ and nuisance vector $\tilde{\bm{\delta}}$, the objective function satisfies:
+\begin{equation}
+    \begin{aligned}
+    h(\tilde{\Theta}, \tilde{\bm{\delta}}; \bm{y}_{1},\cdots,\bm{y}_{J})&=\dfrac{1}{J} \sum_{j=1}^{J} \log \int_{\mathcal{F}} \Bigl[\prod_{i\in \mathcal{I}_{j}}p_{\tilde{\Theta}, \tilde{\bm{\delta}}_j}(\bm{y}_{ij}\mid \bm{f}_{j})\Bigr]p(\bm{f}_{j})\, d\bm{f}_{j}\\
+    &= \dfrac{1}{J} \sum_{j=1}^{J} \log \int_{\mathcal{F}} f_{\Theta, \bm{\delta}_j}(\bm{f}_{j}\mid \bm{y}_{j})\dfrac{p_{\tilde{\Theta}, \tilde{\bm{\delta}}_j}(\bm{y}_{j},\bm{f}_{j})}{f_{\Theta, \bm{\delta}_j}(\bm{f}_{j}\mid \bm{y}_{j})}\,d\bm{f}_{j}\\
+    &\geq \dfrac{1}{J} \sum_{j=1}^{J} \int_{\mathcal{F}} f_{\Theta, \bm{\delta}_j}(\bm{f}_{j}\mid \bm{y}_{j})\log \dfrac{p_{\tilde{\Theta}, \tilde{\bm{\delta}}_j}(\bm{y}_{j},\bm{f}_{j})}{f_{\Theta, \bm{\delta}_j}(\bm{f}_{j}\mid \bm{y}_{j})}\,d\bm{f}_{j},
+\end{aligned}
+\end{equation}
+where the minorization explicitly rests upon the conditional independence assumption that $\bm{y}_{ij}\perp\!\!\!\perp \bm{y}_{i'j} \mid \bm{f}_{j}$ for all $i\neq i'\in \mathcal{I}_{j}$. Isolating the terms that depend strictly on the target parameters, we define the sample $Q$-function incorporating the concentrated fixed effects as:
+\begin{equation}
+    Q_{J}(\tilde{\Theta}, \tilde{\bm{\delta}} \mid \Theta, \bm{\delta}):=\dfrac{1}{J} \sum_{j=1}^{J} \int_{\mathcal{F}} f_{\Theta, \bm{\delta}_j}(\bm{f}_{j}\mid \bm{y}_{j})\log p_{\tilde{\Theta}, \tilde{\bm{\delta}}_j}(\bm{y}_{j},\bm{f}_{j})\,d\bm{f}_{j}.
+    \label{eq: Q_function}
+\end{equation}
+
+In standard applications, the classical EM algorithm maps parameters by iteratively executing unconstrained maximization over the $Q$-function. However, as established by \cite{yi2015regularizedemalgorithmsunified}, this classical layout breaks down catastrophically in high-dimensional domains where the structural parameter space combined with the group fixed effects grows exponentially relative to the sample size ($QK + \text{dim}(\bm{\delta}) \gg J$). 
+
+First, under insufficient group sampling, the empirical M-step mapping $\mathcal{M}_{J}(\Theta)$ deviates drastically from its population counterpart $\mathcal{M}(\Theta)$, causing the standard statistical error to overpower the structural signals: $\lVert \mathcal{M}_{J}(\Theta^{*})-\mathcal{M}(\Theta^{*}) \rVert_F \gg \lVert \Theta^{*} \rVert_F$. Second, the presence of dense, high-dimensional group intercepts $\bm{\delta}$ induces severe rank-deficiency and multi-collinearity in the underlying Hessian matrix with respect to the loading parameter $\mathbf{B}$, rendering the unconstrained optimization landscape completely unstable.
+
+To restore well-posedness, ensure statistical consistency, and decouple the high-dimensional nuisance parameter field, our framework introduces a Profiled Regularized EM sequence. We insert an analytical profiling step derived from the first-order conditions (FOC) of the Poisson-Multinomial Equivalence. This mathematical concentration step absorbs the high-dimensional group intercepts $\bm{\delta}^{(t)}$ out of the M-step optimization loop by updating them in closed form. 
+
+Conditioned on these profiled intercepts acting as fixed regression offsets, the remaining structural parameter landscape is fully linearized and cross-class decoupled. The well-conditioned structural parameters are subsequently updated via a regularized penalty landscape:
+\begin{equation}
+    \mathcal{M}_{J}^{r}(\Theta):=\arg\max_{\tilde{\Theta} \in \Omega} Q_{J}(\tilde{\Theta} \mid \Theta^{(t-1)}, \bm{\delta}^{(t)})-\vartheta_{J} \cdot \mathcal{R}(\tilde{\Theta}),
+\end{equation}
+where $\mathcal{R}(\tilde{\Theta})$ encapsulates geometric regularizers (such as the group Lasso penalty $\sum_q\|\mathbf{b}_q\|_2$) designed to enforce structural compactness on $\mathbf{B}$ and coordinate-wise sparsity on $\mathbf{D}$.
+
+The tuning sequence for the regularizing multiplier $\vartheta_{J}^{(t)}$ balances the optimization convergence rate against the underlying statistical noise bounds. While classical low-dimensional settings use static penalty mappings, our framework employs a dynamic contraction layout following \cite{yi2015regularizedemalgorithmsunified}. We define the target statistical floor as $\Delta_{\bm{\mu},\mathbf{B},\mathbf{D}}=\mathcal{O}\bigl(\sqrt{\log Q/J}\bigr)$. This specific rate reflects a tight union bound over the high-dimensional $Q$-component coordinate system, matching the optimal minimax bounds for high-dimensional generalized linear models \cite{Negahban_2012}. The geometric evolution of the penalty vector is thus locked as:
+\begin{equation}
+    \vartheta_{J}^{(t)}=\kappa^{t}\vartheta_{J}^{(0)}+\dfrac{1-\kappa^{t}}{1-\kappa}\Delta_{\bm{\mu},\mathbf{B},\mathbf{D}},
+\end{equation}
+where $\kappa\in (0,1)$ acts as the strict contractive operator regulating the geometric decay of the optimization error field across successive iterations.
+
+\begin{algorithm}[H]
+\caption{High Dimensional Regularized PME-EM Algorithm} 
+\begin{algorithmic}[1]
+ 
+\Require Observations $\{\bm{y}_{ij}\}_{i\in \mathcal{I}_{j},j=1,\cdots,J}$, cluster-level totals $y_{ij+}$, regularizer $\mathcal{R}$, total iterations $T$, 
+initial structural parameters $\Theta^{(0)}=\{\bm{\phi}^{(0)},\mathbf{B}^{(0)}\}$, initial penalty weight $\vartheta_{J}^{(0)}$, 
+estimated target statistical error $\Delta_{\bm{\mu},\mathbf{B}}$, contractive factor $\kappa < 1$.
+
+\For{$t = 1,2,\ldots,T$}
+
+\State \textbf{Regularization parameter geometric adjustment:}
+\[
+\vartheta_{J}^{(t)} \leftarrow \kappa \vartheta_{J}^{(t-1)} + \Delta_{\bm{\mu},\mathbf{B}} .
+\]
+
+\State \textbf{E-step:} Compute the surrogate objective $Q_{J}(\Theta \mid \Theta^{(t-1)})$ evaluating the conditional expectations over latent factors $\bm{f}_{j}$.
+
+\State \textbf{PME Analytical Profiling (Nuisance Parameter Concentration):} \\
+Apply the Poisson-Multinomial Equivalence first-order condition to analytically update the high-dimensional group intercepts $\delta_{ij}^{(t)}$ using current evaluations:
+\[
+\delta_{ij}^{(t)} \leftarrow \log y_{ij+} - \log \sum_{q} \exp\left(\eta_{ijq}^{(t-1)}\right) .
+\]
+
+\State \textbf{Decoupled Regularized M-step:} \\
+Conditioned on $\delta_{ij}^{(t)}$ acting as a fixed regression \textit{offset} to fully decouple cross-class multi-log sums, optimize the penalized structural landscape in parallel:
+\[
+\Theta^{(t)} \leftarrow \arg\max_{\Theta \in \Omega} Q_{J}\left(\Theta \mid \Theta^{(t-1)}, \bm{\delta}^{(t)}\right) - \vartheta_{J}^{(t)} \cdot \mathcal{R}(\Theta) .
+\]
+
+\EndFor
+ 
+\Ensure Final estimated structural parameter set $\Theta^{(T)}$.
+
+\end{algorithmic}
+\end{algorithm}
+
+\section{Main Results}
+Identification is sustained by enforcing $\bm{\theta}_{q}=[\mu_{q},\phi_{q}^{\top}]^{\top}$. Let $Y$ denotes the total choice volumn, where $Y=\sum_{j}\sum_{i\in \mathcal{I}_{j}}\sum_{q}y_{ijq}$.
+
+\subsection{Statistical Consistency and Asymptotic Framework}
+
+To establish the theoretical guarantees of the proposed Profiled Regularized EM algorithm, we introduce the following regularity conditions. These conditions extend the high-dimensional $M$-estimation framework \cite{Negahban_2012} and the distributed multinomial regression analysis \cite{taddy2015distributed} to accommodate both latent factors and profiled high-dimensional fixed effects.
+
+\begin{lemma}[Sample Scaling and Sparsity]
+Let $n_q = \sum_{j=1}^J \sum_{i \in \mathcal{I}_j} y_{ijq}$ denote the total aggregated counts for category $q$. There exist positive constants $c_1, c_2$ such that $\min_{1 \le q \le Q} n_q \ge c_1 \log Q$. Furthermore, the true loading matrix $\mathbf{B}^0$ is $s$-sparse, i.e., $\sum_{q=1}^Q \|\mathbf{b}_q^0\|_0 \le s$.
+\label{cond:sample_sparsity}
+\end{lemma}
+
+\begin{lemma}[Restricted Strong Concavity (RSC)]
+The population $Q$-function exhibits restricted strong concavity. That is, for any $\boldsymbol{\theta}, \boldsymbol{\theta}' \in \Omega$ within a localized radius $R$, there exists a positive contractive constant $\rho > 0$ such that:
+\begin{equation}
+    Q(\boldsymbol{\theta} \mid \boldsymbol{\theta}^0) - Q(\boldsymbol{\theta}' \mid \boldsymbol{\theta}^0) - \langle \nabla Q(\boldsymbol{\theta}' \mid \boldsymbol{\theta}^0), \boldsymbol{\theta} - \boldsymbol{\theta}' \rangle \le -\frac{\rho}{2} \|\boldsymbol{\theta} - \boldsymbol{\theta}'\|_2^2.
+\end{equation}
+\label{cond:rsc}
+\end{lemma}
+
+\begin{lemma}[Profiling Bias Control]
+The profiling operator $\mathcal{P}(\mathbf{B}, \mathbf{f}_j)$ that analytically concentrates out the nuisance intercepts $\bm{\xi}_j$ is Lipschitz continuous in the localized neighborhood of $\mathbf{B}^0$. Under Condition \ref{cond:sample_sparsity}, the induced profiling bias on the score function vanishes asymptotically such that:
+\begin{equation}
+    \max_{1 \le q \le Q} \left\| \nabla_{\mathbf{b}_q} \ell_P(\mathbf{B}^0, \bm{\xi}(\mathbf{B}^0)) - \nabla_{\mathbf{b}_q} \ell_{\text{marginal}}(\mathbf{B}^0) \right\|_2 = o_p\left(\sqrt{\frac{\log Q}{J}}\right).
+\end{equation}
+\label{cond:profiling_bias}
+\end{lemma}
+
+With these definitions and conditions in place, we define our estimator $\widehat{\Theta} = \{\widehat{\bm{\mu}}, \widehat{\mathbf{B}}, \widehat{\mathbf{D}}\}$ as the localized fixed point generated by the Profiled Regularized EM sequence. Theorem \ref{thm:consistency} establishes the uniform per-category statistical consistency, bypassing the dimensional inflation of the global $\ell_2$ norm via a tight union bound.
+
+\begin{theorem}[Uniform Per-Category Consistency]
+Suppose Conditions \ref{cond:sample_sparsity}--\ref{cond:profiling_bias} hold. Let the regularization parameter evolve dynamically according to $\vartheta_{J}^{(t)}=\kappa^{t}\vartheta_{J}^{(0)}+\frac{1-\kappa^{t}}{1-\kappa}\Delta_{\bm{\mu},\mathbf{B},\mathbf{D}}$. Then, with probability approaching $1$ as $J \to \infty$, the trajectory of the EM sequence converges uniformly across all $Q$ categories to the true parameter landscape:
+\begin{equation}
+    \max_{1 \le q \le Q} \left\| \widehat{\boldsymbol{\theta}}_q - \boldsymbol{\theta}_q^0 \right\|_2 \le C \cdot \sqrt{\frac{s \log Q}{J}},
+\end{equation}
+where $\boldsymbol{\theta}_q = \{\mu_q, \mathbf{b}_q, d_q\}$, and $C > 0$ is a universal constant independent of $Q$ and $J$.
+\label{thm:consistency}
+\end{theorem}
+
+\begin{proof}[Proof Sketch via Coordinate-wise Decoupling]
+Following the union bound framework established in \cite{taddy2015distributed}, the Poisson-Multinomial Equivalence structurally breaks the joint multinomial log-likelihood into $Q$ conditional Poisson sub-problems. Condition \ref{cond:profiling_bias} ensures that the profiling errors originating from the concentrated group intercepts $\bm{\xi}_j^{(t)}$ are tightly bounded and do not propagate across coordinates. 
+
+By applying a union bound over the $Q$ independent score vectors, the stochastic error field is locked uniformly at the minimax rate $\mathcal{O}(\sqrt{\log Q / J})$. Finally, appealing to the localized contractive mapping of the regularized M-step under the RSC condition \cite{yi2015regularizedemalgorithmsunified}, the iteration sequence acts as a strict contraction mapping, compressing the optimization error into the statistical noise floor within $\mathcal{O}(\log(1/\epsilon))$ steps.
+\end{proof}
+
+
+
+
+\bibliography{reference}
+\end{document}

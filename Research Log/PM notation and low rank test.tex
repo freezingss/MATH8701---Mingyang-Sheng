@@ -42,26 +42,309 @@
 	
 \thispagestyle{empty}
 
-\section{A Framework for Poisson Structure}
+\chapter{Introduction}
 
-\subsection{Setup and Model Specification}
-Let $\bm{y}_{ij} = (y_{ij1}, \dots, y_{ijQ})^\top \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector representing category-specific choices for observation unit $i$ nested within group $j(i)$, spanning $Q$ distinct categories. For each observation $i$, let $j(i) \in \{1, 2, \ldots, J\}$ map the individual to its corresponding cluster group. We define the group-specific index set as $\mathcal{I}_j = \{i : j(i) = j\}$ with its cardinality denoted by $I_j = |\mathcal{I}_j|$, such that the aggregate sample size satisfies $I = \sum_{j=1}^J I_j$. 
+\chapter{Literature Review}
 
-Conditioned on individual-specific multinomial total counts $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$ and a latent group-level random-effects vector $\bm{\lambda}_{j}=(\lambda_{jq})_{q=1}^{Q}$ for group $j$, it is assumed that the count vectors $\bm{y}_{ij}$ are independently distributed according to a conditional multinomial distribution:
-\begin{equation}
-    \bm{y}_{ij} \mid  y_{ij+} , \bm{\lambda}_{j}
-    \sim \operatorname{Multinomial}\left(y_{ij+},\, \bm{p}_{ij}\right).
-\end{equation}
-To resolve the cross-category coupling induced by the multinomial denominator field, we conceptualize aggregate capacity $y_{ij+}$ as a random variable conditional on the latent group effect, positing that
-\begin{equation}
-    y_{ij+}\mid \bm{\lambda}_{j}\sim \operatorname{Poisson}\left(\delta_{ij}\sum_{q=1}^{Q}\lambda_{jq}\zeta_{ijq}\right),
-\end{equation}
-independently for each $i$ and $j$. Leveraging the foundational Poisson-Multinomial Equivalence (PME) results extended by \cite{lee2017poissontrickextensionsfitting}, the joint distribution can be exactly factorized into category-by-category independent Poisson elements:
-\begin{equation}
-    y_{ijq}\mid \lambda_{jq}\sim \operatorname{Poisson}(\delta_{ij}\lambda_{jq}\zeta_{ijq}),
-\end{equation}
-independently for each individual $i$ and category $q$. 
+\section{Grouped Multivariate Count Data: The Challenge}
+ 
+High-dimensional multivariate count data with group structure arises across many modern applications. In computational linguistics, documents partition into authors or topics,
+and each document is a vocabulary-sized word-count vector \citep{taddy2015document}.
+In microbiome ecology, samples nest within subjects, and the response is a vector of taxonomic abundances over hundreds of taxa \citep{Tu2023}. Despite their diversity, these settings share a common structure: $n$ observations affiliated with $J$ groups, each generating a count vector $\bm{y}_i \in \mathbb{Z}^Q_{\geq 0}$ over $Q$ categories.
+ 
+The modelling challenge has two dimensions. The \emph{compositional} aspect calls for the Multinomial distribution with a log-linear softmax link. The \emph{hierarchical} aspect requires group-level random effects to capture dependence among observations from the same group; ignoring this structure inflates Type~I error and introduces confounding bias in fixed-effect estimates \citep{Lee2019AnalysisOG}. The literature has addressed these two dimensions largely in isolation. The present work provides a synthesis suited to the large-$Q$ regime.
+ 
+\section{Multinomial Regression and the Poisson--Multinomial Equivalence}
+ 
+The simplest approach treats observations as exchangeable and attributes all variation to measured covariates via Multinomial logistic regression. For large $Q$, direct Multinomial maximum likelihood is computationally prohibitive owing to the coupled softmax normaliser. \citet{10.2307/2348134} established the \emph{Poisson--Multinomial Equivalence} (PME): conditional on the total count $M_i$, the Multinomial likelihood factors into $Q$ independent Poisson log-linear models with a common additive offset $\xi_{ij}$. \citet{taddy2012estimation} exploited this to propose Distributed Multinomial Regression (DMR) for topic models, and \citet{taddy2015document} applied it to large-vocabulary
+document classification. \citet{lee2017poissontrickextensionsfitting} subsequently formalised and extended the PME framework, clarifying conditions under which it applies to a broad class of Multinomial regression models.
+ 
+DMR and standard MLR remain important baselines, but their central limitation is the absence of group-level random effects. When groups differ systematically, treating observations as exchangeable absorbs unmodelled group variation into fixed-effect estimates. For the large-$Q$ setting with high-dimensional fixed effects, \citet{Correia_2020} provides efficient Poisson estimation algorithms; our work builds on this computational tradition while additionally modelling group-level structure.
+ 
+\section{Poisson Lognormal Models: Latent Gaussian Structure}
+ 
+\citet{aitchison1989multivariate} introduced the Poisson Lognormal (PLN) distribution, placing a Gaussian prior $\bm{Z}_i \sim \mathcal{N}(\bm{\mu}, \bm{\Sigma})$ on the log-linear predictors and drawing $Y_{iq} \mid Z_{iq} \overset{\mathrm{ind.}}{\sim} \mathrm{Poisson}(\exp(Z_{iq}))$. PLN captures between-category correlations and over-dispersion, but estimating a full $Q\times Q$ covariance $\bm{\Sigma}$ is infeasible for large $Q$.
+ 
+\citet{chiquet2018variational} addressed this via PLN-PCA, constraining $\bm{\Sigma} = \mathbf{CC}^\top$ with $\mathbf{C}\in\mathbb{R}^{Q\times K}$ and $K\ll Q$, and using variational EM with a mean-field Gaussian approximation. PLN-PCA is the closest structural antecedent to our model: both impose a low-rank factor covariance. The key distinctions are that PLN-PCA operates at the \emph{observation} level (no group random effect), includes no idiosyncratic term (risking Heywood degeneracy, \citealt{heywood1931proof}), and provides no large-$Q$ asymptotic theory.
+ 
+\section{Factor-Analytic Models for Compositional Data}
+ 
+\citet{Tu2023} introduced logistic-normal multinomial (LNM) factor analysers with a factor-structured observation-level covariance $\bm{\Sigma} = \mathbf{BB}^{\top} + \bm{\Psi}$, $\bm{\Psi} = \mathrm{diag}(\psi_1,\ldots,\psi_Q)$. The EM algorithm uses a variational Gaussian approximation in the E-step and the Rubin-Thayer iterations \citep{Rubin1982} in the M-step.
+ 
+LNM-FA shares the factor-analytic motivation of the present work. Three structural differences motivate our formulation. First, LNM-FA places the factor structure at the observation level, whereas we target the \emph{group} level: all observations in group $j$ share a common random effect $\bm{\alpha}_j = \mathbf{B}\mathbf{f}_j + \bm{\epsilon}_j$. This group-level structure is the appropriate mixed-effects specification when the group's latent profile is the inferential quantity of interest, and is directly motivated by the conjugate GLMM framework of \citet{Lee2019AnalysisOG}. Second, we adopt the spherical simplification $\mathbf{D} = \sigma^2\mathbf{I}_Q$, reducing the idiosyncratic component to a single scalar. This relaxes the identifiability condition from the classical Ledermann bound $(Q-K)^2 \geq Q+K$ \citep{ledermann1937rank} to the weaker $Q > K$: the covariance provides $Q(Q+1)/2$ equations while the PLT-constrained $\mathbf{B}$ and $\sigma^2$ have $QK - K(K-1)/2 + 1$ free parameters, with the gap always positive for $Q > K$ \citep[PLT constraint;][]{Anderson1956StatisticalII}. Third, LNM-FA provides no large-$Q$ asymptotic theory. The consistency rate $\|\hat{\mathbf{B}}-\mathbf{B}^*\|_F^2 = O_p(K/Q)$, established in Chapter~5, is, to our knowledge, the first such result for grouped multinomial factor models.
 
+\section{Inference: Laplace Approximation and EM}
+
+The intractable marginal likelihood $\int p(\bm{y}_j \mid \bm{\alpha}_j)\,p(\bm{\alpha}_j)\,d\bm{\alpha}_j$ requires approximation.
+ 
+\paragraph{Variational inference.}
+Variational methods \citep{Blei03042017} lower-bound the log-likelihood and optimise over a tractable family. Both PLN-PCA \citep{chiquet2018variational} and LNM-FA \citep{Tu2023} use mean-field Gaussian approximations. For high-dimensional mixed models, \citet{Goplerud_2024} recently proposed a partially factorised variational family that retains some posterior correlations while remaining computationally scalable. A shared limitation of variational methods is that they optimise a lower bound rather than the exact marginal likelihood, complicating exact BIC-based model selection and potentially underestimating posterior variance \citep{Blei03042017}.
+ 
+\paragraph{Laplace approximation.}
+The Laplace approximation \citep{Tierney01031986} replaces the posterior with a Gaussian at the mode, with precision $-\mathbf{H}(\hat{\bm{\alpha}}_j)$. \citet{Breslow_1993} established first-order consistency of Laplace-EM estimates in GLMMs. We embed this approximation within the EM algorithm of \citet{dempster1977maximum}, using the Laplace log-evidence as a monotone convergence criterion. The M-step factor decomposition uses the Rubin--Thayer algorithm \citep{Rubin1982}, with the ECME acceleration of \citet{article}
+available for further speed gains. The computational bottleneck, the $Q\times Q$ Newton solve in the E-step, is reduced from $O(Q^3)$ to $O(QK^2)$ in Chapter~4 via a novel PME auxiliary-variable construction combined with two applications of the Woodbury matrix identity.
+ 
+\section{Positioning the Present Work}
+
+Relative to PLN-PCA, we add a group-level hierarchical structure, a spherical idiosyncratic term, and Laplace inference. Relative to LNM-FA, the principal advances are the group-level factor structure and the large-$Q$ consistency theory. Relative to DMR, we add group-level random effects with a factor prior; DMR is recovered as the special case $J = 1$, and the PME is extended from the M-step to the E-step as a novel auxiliary-variable device. Relative to conjugate GLMM approaches \citep{Lee2019AnalysisOG}, we impose a low-rank factor structure on the group-level covariance, enabling consistent estimation of $\mathbf{B}$ as $Q\to\infty$.
+
+\chapter{Model Specification}
+
+\section{Data Structure and Notation}
+    Let $\bm{y}_{ij} = (y_{ij1}, \dots, y_{ijQ})^\top \in \mathbb{Z}_{\geq 0}^Q$ denote the count vector representing category-specific choices for observation unit $i$ nested within group $j(i)$, spanning $Q$ distinct categories. For each observation $i$, let $j(i) \in \{1, 2, \ldots, J\}$ map the individual to its corresponding cluster group. We define the group-specific index set as $\mathcal{I}_j = \{i : j(i) = j\}$ with its cardinality denoted by $I_j = |\mathcal{I}_j|$, such that the aggregate sample size satisfies $I = \sum_{j=1}^J I_j$. Each observation carries a covariate vector $\bm{v}_{ij}\in \mathbb{R}^{P}$. We do not include a constant term in $\bm{v}_{ij}$ as category-specific intercepts are carried separately by $\bm{\mu}$. The primary regime of interest is $Q \gg K$ with J moderate.
+
+\section{Observation Layer}
+    Conditional on the total count $y_{ij\cdot}=\sum_{q=1}^{Q}y_{ijq}$ and group-level random effect $\bm{\lambda}_{j}\in \mathbb{R}^{Q}$, each observation follows a multinomial distribution:
+\begin{comment}
+Conditioned on individual-specific multinomial total counts and a latent group-level random-effects vector $\bm{\lambda}_{j}=(\lambda_{jq})_{q=1}^{Q}$ for group $j$, it is assumed that the count vectors $\bm{y}_{ij}$ are independently distributed according to a conditional multinomial distribution:
+\end{comment}
+\begin{equation}
+    \bm{y}_{ij} \mid  y_{ij\cdot} , \bm{\lambda}_{j}
+    \sim \operatorname{Multinomial}\left(y_{ij\cdot},\, \bm{p}_{ij}\right), \quad p_{ijq}=\frac{\exp(\eta_{ijq})}{\sum_{q'=1}^{Q}\exp(\eta_{ijq'})},
+\end{equation}
+where the log-linear predictor is:
+\begin{equation}
+    \eta_{ijq}=\mu_{q}+\bm{v}_{ij}^{\top}\bm{\phi}_{q}+\lambda_{jq}, \quad q=1,2,\dots, Q.
+\end{equation}
+    Here $\mu_{q}\in\mathbb{R}$ is the category-specific intercept, $\bm{\phi}_{q}\in\mathbb{R}^{P}$ is the vector of covariate effects for category $q$, and $\lambda_{jq}$ is the contribution of group $j$ to the log-relative-rate of category $q$. Since $\bm{v}_{ij}$ does not contain a constant, $\mu_{q}$ is the sole intercept for category $q$, and no constraints on $\Phi$ are needed for identification of the intercepts. The Q independent Poisson regressions in the M-step each include $\mu_{q}$ as an intercept term alongside $\bm{v}_{ij}\bm{\phi}_{q}$, with no baseline-category restriction required under the Poisson-Multinomial Equivalence.
+
+\section{Group-Level Factor Analyzer Structure}
+    The group random effects are assumed independently and identically distributed:
+\begin{equation}
+    \bm{\lambda}_{j}\sim \mathcal{N}(\bm{0},\bm{\Sigma}), \quad \bm{\Sigma}=\mathbf{BB}^{\top}+\mathbf{D},
+    \label{eq: Overall notation structure}
+\end{equation}
+where $\mathbf{B}\in \mathbb{R}^{Q\times K}$ is the factor loadings matrix and $\mathbf{D}$ is the variance. Equivalently, in the factor regression form:
+\begin{equation}
+    \bm{\lambda}_{j}=\mathbf{B}\mathbf{f}_{j}+\bm{\epsilon}_{j}, \quad \mathbf{f}_{j}\sim \mathcal{N}(\bm{0},\bm{I}_{K}), \quad \bm{\epsilon}_{j}\sim \mathcal{N}(\bm{0},\mathbf{D}),
+    \label{eq: Detailed notation structure}
+\end{equation}
+so that $\lambda_{jq}=\mathbf{b}_{q}^{\top}\mathbf{f}_{j}+\epsilon_{jq}$, where $\mathbf{b}_{q}$ is the q-th row of $\mathbf{B}$. We use \ref{eq: Overall notation structure} for inference and \ref{eq: Detailed notation structure} for interpretation.
+    For the error matrix $\mathbf{D}$, we do the analysis both on two assumptions step by step, that is:
+\begin{itemize}
+    \item $\mathbf{D}=\sigma^{2}\mathbf{I}_{Q}$ with $\sigma^{2} >0$,
+    \item $\mathbf{D}=\text{diag}(d_{1}^{2},\dots,d_{Q}^{2})$ with entries $d_{q}^{2}>0$,
+    \item $\mathbf{D}$ may be more complex.
+\end{itemize}
+\begin{remark}[Variance decomposition]
+    The variance of the log-relative-rate of category $q$ decomposes as 
+    \begin{equation*}
+        \operatorname{Var}(\lambda_{jq})=\|\mathbf{b}_{q}\|^{2}+\sigma^{2},
+    \end{equation*}
+where $\|\mathbf{b}_{q}\|^{2}$ captures the structured (factor) component and $\sigma^2$ the idiosyncratic component. The ratio $\|\mathbf{b}_{q}\|^2/(\|\mathbf{b}_{q}\|^2+\sigma^2)$ quantifies the proportion of between-group variation in category $q$ explained by the latent factors (the signal-to-noise ratio). 
+\end{remark}
+
+\section{Identifiability}
+    The factor model \ref{eq: Detailed notation structure} is subject to rotational indeterminacy. For any $K\times K$ orthogonal matrix $\mathbf{V}$, the substitution $(\mathbf{B},\mathbf{f}_{j})\to (\mathbf{BV},\mathbf{V}^{\top}\mathbf{f}_{j})$ leaves the distribution of $\bm{\lambda}_{j}$ unchanged. We impose the positive lower triangular constraints:
+\begin{equation}
+    b_{qk}=0 \text{ for } q<k, \quad b_{kk}>0 \text{ for }k=1,2,\dots ,K.
+    \label{eq: PLT}
+\end{equation}
+    This fixes both the $K(K-1)/2$ rotational degrees of freedom and the K sign ambiguities.
+
+\chapter{The Poisson-Multinomial Equivalence}
+
+    \citet{10.2307/2348134} established that, conditional on $y_{ij\cdot}$, the Multinomial likelihood is equivalent to a product of independent Poisson likelihoods with a common additive offset.
+\begin{proposition}[Poisson-Multinomial Equivalence; \citet{10.2307/2348134}]
+    Define the offset:
+    \begin{equation*}
+        \xi_{i}=\log y_{ij\cdot}-\log \sum_{q=1}^{Q}\exp(\eta_{ijq}).
+    \end{equation*}
+    Then $\bm{y}_{ij}\mid \bm{\lambda}_{j}\sim \operatorname{Multinomial}(y_{ij\cdot}, \bm{p}_{ij})$ if and only if $y_{ijq}\mid \lambda_{jq}\sim \operatorname{Poisson}\bigl(\exp(\eta_{ijq}+\xi_{ij})\bigr)$ for $q=1,2,\dots, Q$, conditional on $y_{ij\cdot}$.
+\end{proposition}
+    The offset $\xi_{ij}$ is observation-specific and depends on $\bm{\lambda}_{j}$ through the denominator $\sum_{q}\exp(\eta_{ijq})$. This is a critical point for the inference algorithm. The Poisson-Multinomial trick is used only in the M-step for updating the fixed effects $(\bm{\mu}, \bm{\Phi})$, where $\bm{\lambda}_{j}$ is treated as fixed. It is not used in the E-step.
+    
+The Poisson-Multinomial Equivalence, first established by \citet{10.2307/2348134}, states that conditional on the observation total $y_{ij\cdot}$, the Multinomial likelihood is exactly equivalent to a product of independent Poisson likelihoods sharing a common additive offset. Formally, defining
+\begin{equation}
+    \xi_{ij}^{\mathrm{M}} = \log y_{ij\cdot} - \log\sum_{q=1}^Q \exp(\eta_{ijq}),
+    \label{eq:xi_baker}
+\end{equation}
+the joint Multinomial draw $\bm{y}_{ij} \mid \bm{\lambda}_{j} \sim \mathrm{Multinomial}(y_{ij\cdot}, \bm{p}_{ij})$ is equivalent to $y_{ijq} \mid \bm{\lambda}_{j} \sim \mathrm{Poisson}(\exp(\eta_{ijq} + \xi_{ij}^{\mathrm{M}}))$ independently for $q = 1, \ldots, Q$, conditional on $y_{ij\cdot}$. Because the offset~\eqref{eq:xi_baker} absorbs the softmax normalizer, the $Q$ Poisson sub-problems are fully decoupled and can be solved independently.
+
+As noted in the preceding chapter, $\xi_{ij}^{\mathrm{M}}$ is deployed in the M-step of our algorithm to update the fixed effects $(\bm{\mu}, \bm{\Phi})$ via $Q$ independent Poisson GLMs, with $\hat{\bm{\lambda}}_j$ held fixed as an offset. Crucially, the offset depends on $\bm{\lambda}_j$ through the denominator $\sum_q \exp(\eta_{ijq})$, making it observation- and iteration-specific; as \citet{lee2017poissontrickextensionsfitting} emphasise, this dependence is a critical point for the inference algorithm.
+
+\citet{lee2017poissontrickextensionsfitting} extended the \citet{10.2307/2348134} framework by reconceptualizing the aggregate count $y_{ij\cdot}$ not as a fixed conditioning constant but as a \emph{random variable} conditional on the latent group effect $\bm{\lambda}_j$. Under this perspective, the joint distribution of $(y_{ijq})_{q=1}^Q$ factorizes exactly into category-by-category independent Poisson elements without conditioning on any fixed aggregate, shifting $\xi_{ij}$ from a deterministic normalisation constant into a latent quantity encoding the group-level distributional mass.
+
+The present chapter carries this perspective one step further into the E-step. In the standard Laplace E-step, $\bm{\lambda}_j$ is updated via Newton's method on the full Multinomial log-posterior $\ell(\bm{\lambda}_j)$. The bottleneck is the rank-$I_j$ outer-product term $\sum_{i \in \mathcal{I}_j} y_{ij\cdot} \bm{p}_{ij} \bm{p}_{ij}^\top$ in the Hessian, which arises directly from the softmax normalizer and couples all $Q$ categories, forcing an $O(Q^3)$ linear solve per Newton step. Inspired by Lee et al.'s insight that the normalization mass can be treated as a free quantity rather than a fixed constraint, we introduce $\xi_{ij}$ as an explicit auxiliary optimization variable in the E-step objective. When $\xi_{ij}$ is held fixed during the update of $\bm{\lambda}_j$, the log-sum-exp coupling disappears entirely and the likelihood Hessian reduces to a diagonal matrix, enabling a second Woodbury reduction that cuts the per-step cost from $O(Q(I_j + K))$ to $O(QK^2 + K^3)$.
+
+\chapter{Inference for Laplace-Approximated EM Algorithm}
+
+\section{The Inference Challenge}
+    The observed-data log-likelihood is:
+\begin{equation}
+    \ell(\bm{\theta})=\sum_{j=1}^{J}\sum_{i\in \mathcal{I}_{j}}\log p(\bm{y}_{ij}\mid \bm{\theta})=\sum_{j=1}^{J}\sum_{i\in \mathcal{I}_{j}}\log \int p(\bm{y}_{ij}\mid \bm{\lambda}_{j})p(\bm{\lambda}_{j}\mid \bm{\Sigma})\,d\bm{\lambda}_{j},
+\end{equation}
+where the parameter space $\bm{\theta}:=\{\bm{\mu}, \bm{\Phi}, \mathbf{B},\sigma^{2}\}$. The integral is analytically intractable due to the non-conjugacy of the Gaussian prior on $\bm{\lambda}_{j}$ and the multinomial likelihood. The standard approach in generalized linear mixed models is the Laplace approximation (\citet{Breslow_1993}, \citet{Tierney01031986}), which replaced the integral with a Gaussian approximation at the posterior mode, and embeds this within the EM algorithm treating $\bm{\lambda}_{j}$ as missing data.
+
+\section{The Choice of Approximation Level}
+    A natural approach motivated by the PLN-PCA model given by \citet{chiquet2018variational} would be to approximate the posterior of the K-dimensional factor $p(\mathbf{f}_{j}\mid \bm{y}_{ij})$. Since we assumed $K\ll Q$, this reduces the Newton-step Hessian from $Q\times Q$ to $K\times K$, which appears computationally attractive. However, this approach encounters two fundamental obstacles. 
+\paragraph{Group Collapsing} Within group $j$, observations $\{i\in \mathcal{I}_{j}\}$ share the same factor $\mathbf{f}_{j}$ but carry distinct covariate vectors $\bm{v}_{ij}$ and total count $y_{ij\cdot}$. The factor-space log-posterior requires summing $\sum_{i\in \mathcal{I}_{j}}\log p(\bm{y}_{ij}\mid \mathbf{f}_{j})$, where each term involves its own normalizing constant $\sum_q \exp\bigl(\eta_{ijq}(\mathbf{f}_j)\bigr)$. A naive implementation collapses all observations in group $j$ into a single super-observation with total counts $\bm{y}_{\cdot j} = \sum_{i\in \mathcal{I}_{j}} \bm{y}_{ij}$ and averaged fixed effects $\bar{\bm{\eta}}_{j}$, treating the group as a single Multinomial draw. This is mathematically incorrect. The Multinomial log-normalizer does not linearize under summation, and the approximation error grows with within-group heterogeneity in $\bm{v}_{ij}$. 
+\paragraph{Posterior Second-Moment Deflation} The factor-space Laplace posterior yields a second-moment matrix $\mathbf{W}_{f}=J^{-1}\sum_{j}(\hat{\mathbf{f}}_{j}\hat{\mathbf{f}}_{j}^{\top}+\hat{\mathbf{V}}_{j})$ that systematically underestimates $\mathbf{I}_{K}$ due to Laplace shrinkage. Because the M-step for $\mathbf{B}$ receives only $\mathbf{BW}_{f}\mathbf{B}^{\top}$ as its sufficient statistic for $\bm{\Sigma}$, the Rubin–Thayer algorithm (\citet{Rubin1982}) compensates by inflating $\hat{\mathbf{B}}$, leading to the error in estimation. 
+    Thus, instead of approximate the posterior of $K$ dimensional latent factors, we do the approximation on Q dimensional group random effect $p(\bm{\lambda}_{j}\mid \bm{y}_{ij})$ directly and move the factor decomposition from the E-step to the M-step. The E-step treats $\bm{\lambda}_{j}$ as an unknown Q-vector with Gaussian prior $\mathcal{N}(\bm{0},\bm{\Sigma})$, then the M-step decomposes the resulting estimated covariance $\hat{\bm{\Sigma}}_{\text{obs}}$ into $\mathbf{BB}^{\top}+\sigma^{2}\mathbf{I}$.
+
+\section{E-Step: Laplace Approximation}
+\label{subsec: E-step}
+    For each group $j$, the log-posterior of $\bm{\lambda}_{j}$ is given by:
+\begin{equation}
+    \mathcal{L}(\bm{\lambda}_{j})=\sum_{i\in \mathcal{I}_{j}}\Bigl[\sum_{q}y_{ijq}\eta_{ijq}(\bm{\lambda}_{j})-y_{ij\cdot}\log \sum_{q}\exp\bigl(\eta_{ijq}(\bm{\lambda}_{j})\bigr)\Bigr]-\frac{1}{2}\bm{\lambda}_{j}^{\top}\bm{\Sigma}^{-1}\bm{\lambda}_{j},
+    \label{eq: estep-loglik}
+\end{equation}
+where 
+\begin{equation}
+    \eta_{ijq}(\bm{\lambda}_{j})=\mu_{q}+\bm{v}_{ij}^{\top}\bm{\phi}_{q}+\lambda_{jq},
+    \label{eq: individualcovariate}
+\end{equation}
+is evaluated separately for each $i\in \mathcal{I}_{j}$, gives the individual-specific covariate structure.
+    The gradient and Hessian of \ref{eq: estep-loglik} are:
+    \begin{equation}
+        \nabla_{\bm{\lambda}_{j}}\ell=\sum_{i\in \mathcal{I}_{j}}\bigl(\bm{y}_{ij}-y_{ij\cdot}\bm{p}_{ij}(\bm{\lambda}_{j})\bigr)-\bm{\Sigma}^{-1}\bm{\lambda}_{j},
+    \end{equation}
+    \begin{equation}
+        \mathbf{H}(\bm{\lambda}_{j})=-\sum_{i\in\mathcal{I}_{j}}y_{ij\cdot}\mathbf{P}_{ij}(\bm{\lambda}_{j})-\bm{\Sigma}^{-1},
+        \label{eq: Hessian1}
+    \end{equation}
+where $\bm{p}_{ij}(\bm{\lambda}_{j})=\operatorname{softmax}\bigl(\bm{\eta}_{ij}(\bm{\lambda}_{j})\bigr)$ and $\mathbf{P}_{ij}=\text{diag}(\bm{p}_{ij})-\bm{p}_{ij}\bm{p}_{ij}^{\top}$. Since $\mathbf{P}_{ij}\succeq 0$ and $\bm{\Sigma}^{-1}\succ 0$, we have $\mathbf{H}(\bm{\lambda}_{j})\prec 0$ everywhere, so $\ell(\bm{\lambda}_{j})$ is strictly concave and Newton's method
+\begin{equation}
+    \bm{\lambda}_{j}^{(t+1)}=\bm{\lambda}_{j}^{(t)}-s^{(t)}\mathbf{H}\bigl(\bm{\lambda}_{j}^{(t)}\bigr)^{-1}\nabla_{\bm{\lambda}_{j}}\ell \bigl(\bm{\lambda}_{j}^{(t)}\bigr)
+\end{equation}
+with backtracking step size $s^{(t)}$ converges to the unique global maximum $\hat{\bm{\lambda}}_{j}$ from any initialization. The Laplace approximation then yields
+\begin{equation}
+    p(\bm{\lambda}_{j}\mid \bm{y}_{ij}) \approx \mathcal{N}\bigl(\hat{\bm{\lambda}}_{j}, \hat{\mathbf{S}}_{j}\bigr), \quad \hat{\mathbf{S}}_{j}=\bigl(-\mathbf{H}(\hat{\bm{\lambda}_{j}})\bigr)^{-1}
+\end{equation}
+
+\section{M-Step (a): Fixed Effects via Poisson GLMs}
+
+    With $\hat{\bm{\lambda}}_{j}$ fixed, recompute the PME offset:
+\begin{equation}
+    \xi_{ij}=\log y_{ij\cdot}-\log \sum_{q}\exp\bigl(\hat{\mu}_{q}+\bm{v}_{ij}^{\top}\hat{\bm{\phi}}_{q}+\hat{\lambda}_{jq}\bigr).
+\end{equation}
+    For $q=1,2,\dots,Q$, we solve the maximization independently:
+    \begin{equation}
+        (\hat{\mu}_{q}, \hat{\bm{\phi}}_{q})=\arg \max_{\mu_{q}, \bm{\phi}_{q}}\sum_{i}\bigl[y_{ijq}(\mu_{q}+\bm{v}_{ij}^{\top}\bm{\phi}_{q})-\exp (\mu_{q}+\bm{v}_{ij}^{\top}\bm{\phi}_{q}+\hat{\lambda}_{jq}+\xi_{ij})\bigr].
+    \end{equation}
+    This is a Poisson log-linear regression with offset $\lambda_{jq}+\xi_{ij}$, solved by iteratively reweighted least squares. The Q problems are independent and may be parallelized. 
+
+\section{M-Step (b): Factor Loadings and Idiosyncratic Variance}
+
+    The EM sufficient statistic for $\bm{\Sigma}$ follows directly from the Laplace output:    
+\begin{equation}
+    \hat{\bm{\Sigma}}_{\text{obs}}=\frac{1}{J}\sum_{j}\mathbb{E}[\bm{\lambda}_{j} \bm{\lambda}_{j}^{\top}\mid \bm{y}_{ij}]\approx \frac{1}{J}\sum_{j}(\hat{\bm{\lambda}}_{j} \hat{\bm{\lambda}}_{j}^{\top}+\hat{\mathbf{S}}_{j}).
+\end{equation}
+Critically, $\hat{\bm{\Sigma}}_{\text{obs}}$ is fully determined by current Laplace output $(\hat{\bm{\lambda}}_{j}, \hat{\mathbf{S}}_{j})$ and does not need to be re-evaluated during the Rubin-Thayer sub-iterations, thus eliminating the circular dependency inherent in factor-space formulations.
+    Given $\hat{\bm{\Sigma}}_{\text{obs}}$, we decompose $\bm{\Sigma}=\mathbf{BB}^{\top}+\sigma^2\mathbf{I}_{Q}$ via the Rubin-Thayer EM factor analysis algorithm (\citet{Rubin1982}):
+\begin{equation}
+\hat{\boldsymbol{\beta}}
+=
+\hat{\mathbf{B}}^\top
+\left(
+\hat{\mathbf{B}}\hat{\mathbf{B}}^\top
++
+\hat{\sigma}^2 \mathbf{I}_Q
+\right)^{-1},
+\label{eq: Rubin1}
+\end{equation}
+\begin{equation}
+\hat{\boldsymbol{\Theta}}
+=
+\mathbf{I}_K
+-
+\hat{\boldsymbol{\beta}}\hat{\mathbf{B}}
++
+\hat{\boldsymbol{\beta}}
+\hat{\boldsymbol{\Sigma}}_{\mathrm{obs}}
+\hat{\boldsymbol{\beta}}^\top,
+\label{eq: Rubin2}
+\end{equation}
+\begin{equation}
+\hat{\mathbf{B}}_{\mathrm{new}}
+=
+\hat{\boldsymbol{\Sigma}}_{\mathrm{obs}}
+\hat{\boldsymbol{\beta}}^\top
+\hat{\boldsymbol{\Theta}}^{-1},
+\label{eq: Rubin3}
+\end{equation}
+\begin{equation}
+\hat{\sigma}_{\mathrm{new}}^{2}
+=
+\frac{1}{Q}
+\operatorname{tr}
+\left(
+\hat{\boldsymbol{\Sigma}}_{\mathrm{obs}}
+-
+\hat{\mathbf{B}}_{\mathrm{new}}
+\hat{\boldsymbol{\beta}}
+\hat{\boldsymbol{\Sigma}}_{\mathrm{obs}}
+\right).
+\label{eq: Rubin4}
+\end{equation}
+The iterations  \ref{eq: Rubin1}-\ref{eq: Rubin4} are repeated to convergence. The PLT constraint \ref{eq: PLT} is enforced post-hoc via a QR decomposition of the top K rows of $\hat{\mathbf{B}}_{\text{new}}$, followed by sign correction to ensure positive diagonal entries and zeroing of the upper triangle. Applying PLT only after the Rubin–Thayer sub-iterations converge, rather than at each inner step, avoids the discontinuities that would otherwise disrupt convergence.
+    Given $\hat{\mathbf{B}}$ and $\hat{\sigma}^2$, the factor scores are recovered by the Bayes linear estimator:
+\begin{equation}
+\hat{\mathbf{f}}_j = \left( \mathbf{I}_K + \frac{1}{\hat{\sigma}^2} \hat{\mathbf{B}}^\top \hat{\mathbf{B}} \right)^{-1} \frac{1}{\hat{\sigma}^2} \hat{\mathbf{B}}^\top \hat{\boldsymbol{\lambda}}_j,
+\end{equation}
+requiring only $K\times K$ inversion via Woodbury identity.
+
+\section{Simulation Results}
+
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Rplottest1.pdf}
+        \caption{True loading matrix}
+        \label{fig:Basictest1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Rplottest2.pdf}
+        \caption{Estimated loading matrix}
+        \label{fig:Basictest2}
+    \end{subfigure}
+
+    \caption{Comparison of true and estimated loading matrices}
+    \label{fig:comparison}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Rplottest3.pdf}
+    \caption{Factor loading matrix estimate}
+    \label{fig: Basictest3}
+\end{figure}
+
+\chapter{Acceleration}
+
+\section{Motivation: The Hessian Bottleneck Revisited}
+    Recall that the Laplace E-step for group $j$ requires solving the $Q$-dimensional Newton system $\mathbf{H}(\bm{\lambda}_{j})=\nabla_{\bm{\lambda}_{j}}\ell$ at each Newton iteration, where the log-posterior Hessian is given by \ref{eq: Hessian1}. The prior precision $\bm{\Sigma}^{-1}$ is handled efficiently via the Woodbury identity in $\mathcal{O}(QK^2+K^3)$. However, the likelihood contribution $\sum_{i}y_{ij\cdot}\mathbf{P}_{ij}$ is a $Q\times Q$ dense matrix. The term $\sum_{i}y_{ij\cdot}\bm{p}_{ij}\bm{p}_{ij}^{\top}$ creates cross-category coupling that forces an $\mathcal{O}(Q^3)$ linear solve. In the notation of earlier Woodbury part, the combined diagonal and lower-rank (DLR) structure requires an $\mathcal{O}\bigl(Q(N_{j}+K)\bigr)$ solve per Newton step, which for large $N_{j}$ cannot be further reduced without additional structure. Thus, we provide an auxiliary variable $\xi_{ij}$ into the E-step objective. When $\xi_{ij}$ is held fixed, the resulting Poisson surrogate has a purely diagonal likelihood Hessian, enabling a second Woodbury reduction that cuts the per-step cost from $\mathcal{O}\bigl(Q(N_{j}+K)\bigr)$ to $\mathcal{O}(QK^2+K^3)$. 
+
+\section{Extended PME Objective}
+
+\subsection{Auxiliary Variable Introduction}
+    The standard application of the Poisson--Multinomial Equivalence (PME, Proposition~3.1) in our algorithm is confined to the M-step: given the current E-step estimate $\hat{\bm{\lambda}}_j$, the observation-specific offset
+\begin{equation}
+    \xi_{ij}^{\mathrm{M}} = \log y_{ij\cdot} - \log\sum_{q=1}^Q
+    \exp\bigl(\eta_{ijq}(\hat{\bm{\lambda}}_j)\bigr)
+    \label{eq:xi_mstep}
+\end{equation}
+is computed once and held fixed as an additive constant, converting the Multinomial log-likelihood into $Q$ decoupled Poisson log-linear models that can be optimised independently. This usage, however, does not help the E-step. In the E-step, we optimise the full Multinomial log-posterior $\ell(\bm{\lambda}_j)$ over $\bm{\lambda}_j \in \mathbb{R}^Q$, whose Hessian contains the rank-$I_j$ outer-product term $\sum_{i\in\mathcal{I}_j}y_{ij\cdot}\bm{p}_{ij}\bm{p}_{ij}^\top$. This dense coupling forces an $O(Q^3)$ linear solve per Newton step, which remains the dominant bottleneck even after applying the Woodbury identity to the prior precision $\bm{\Sigma}^{-1}$.
+
+    The key observation is that the dense coupling arises precisely from the softmax normalizer $\log\sum_q\exp(\eta_{iq})$.  Taking the second derivative of this term with respect to $(\lambda_{jq}, \lambda_{jq'})$ produces the cross-term $-y_{ij\cdot}p_{ijq}p_{ijq'}$, which couples every pair of categories. We therefore ask that what if we treat $\xi_{ij}$ not as a fixed constant derived from the current $\hat{\bm{\lambda}}_j$, but as a free auxiliary variable that participates in the E-step optimization? Concretely, we lift the E-step objective from the space $\mathbb{R}^Q$ (over $\bm{\lambda}_j$ alone) to the extended space $\mathbb{R}^Q \times \mathbb{R}^{I_j}$. In this extended space, the Poisson surrogate replaces the problematic log-sum-exp term with the additive scalar $\xi_{ij}$, so that the likelihood contribution to the Hessian becomes purely diagonal whenever $\xi_{ij}$ is held fixed. The profile of this surrogate over $\bm{\xi}_j$ (maximizing over $\xi_{ij}$ for fixed $\bm{\lambda}_j$) recovers exactly~\eqref{eq:xi_mstep} and hence the original Multinomial log-posterior (Proposition~\ref{prop:profile}), ensuring that the extended objective carries no additional approximation error.
+    
+    For group $j$, define the Poisson surrogate log-posterior over the extended variable space $(\bm{\lambda}_{j},\bm{\xi}_{j})$, where $\bm{\xi}_{j}=(\xi_{i})_{i\in\mathcal{I}_{j}}$ collects one real-valued scalar per observation:
+\begin{equation}
+\ell_{\mathrm{P}}(\boldsymbol{\lambda}_j, \boldsymbol{\xi}_j) = \sum_{i \in \mathcal{I}_j} \sum_{q=1}^{Q} \left[ y_{ijq} \eta_{ijq}(\boldsymbol{\lambda}_j) - \exp\left(\eta_{ijq}(\boldsymbol{\lambda}_j) + \xi_{ij}\right) \right] - \frac{1}{2} \boldsymbol{\lambda}_j^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{\lambda}_j,
+\end{equation}
+with the definition \ref{eq: individualcovariate} of $\eta_{ijq}$ given in \ref{subsec: E-step}. Compared to the Multinomial log-posterior \ref{eq: estep-loglik}, the key difference is that the softmax normalizer $\log \sum_{q}\exp(\eta_{ijq})$ has been replaced by the additive scalar $\xi_{ij}$. This decouples the Q categories in the likelihood. For fixed $\xi_{ij}$, the $q$-th term $y_{ijq}\eta_{ijq}-\exp (\eta_{ijq}+\xi_{ij})$ depends only on $\lambda_{jq}$ with no cross-category interaction.
+
+\subsection{Profile Likelihood Equivalence}
+The auxiliary variables $\bm{\xi}_{j}$ are introduced purely for computational convenience.
+
+
+
+
+\begin{comment}
 Although classical implementations \cite{lee2017poissontrickextensionsfitting} structurally marginalize random effects under a conjugate Gamma distribution to arrive at a closed-form marginal Negative Binomial specification, such treatments become computationally restrictive and lose structural information in high-dimensional settings. Our approach departs fundamentally from marginalization. We extend the probabilistic principal component analysis paradigm (pPCA) within the Poisson canonical space \cite{chiquet2018variational} by projecting the unobserved random effects onto a lower-dimensional latent subspace.
 
 Specifically, the latent variables enter the intensity field through the canonical logarithmic link function associated with the Poisson family. We project a factor structure directly onto the log-transformed group-level random effects:
@@ -86,7 +369,7 @@ This low-rank factorization structurally parameterizes the systematic co-variati
 \end{equation}
 Here, the scalar $\delta_{ij}$ operates as a known exposure offset, and $\zeta_{ijq}$ represents a strictly positive individual-specific function conining observed covariates $\bm{v}_{i}$ and fixed effects $\bm{\gamma}$.
 
-\subsection{The High-Dimensional Computational Bottleneck}
+\section{The High-Dimensional Computational Bottleneck}
 Consider a multinomial count framework where the target vector of category choices for individual $i$ inside group $j$ is denoted by $\bm{y}_{ij}=(y_{ij1}, \dots, y_{ijQ})^\top$. The total realized choice capacity for this observation unit is aggregated as $y_{ij+}=\sum_{q=1}^{Q}y_{ijq}$. Under a standard random-effects multinomial logit specification, the conditional probability that a choice falls into category $q$ is governed by:
 \begin{equation}
     p_{ijq}=\frac{\exp (\eta_{ijq})}{\sum_{q=1}^{Q}\exp (\eta_{ijq})},
@@ -96,7 +379,7 @@ where $\eta_{ijq}=\mu_{q}+\lambda_{jq}+\zeta_{ijq}$ encapsulates the structural 
     \ell_{M}(\bm{\theta})=\sum_{j}\sum_{i\in \mathcal{I}_{j}}\Bigl(\log y_{ij+}!-\sum_{q=1}^{Q}\log y_{ijq}!+\sum_{q=1}^{Q}y_{ijq}\eta_{ijq}-y_{ij+}\log \bigl(\sum_{q=1}^{Q}\exp (\zeta_{ijq})\bigr) \Bigr).
 \end{equation}
 The presence of the log-sum-of-exponentials term binds all $Q$ categories together within the denominator. As $Q\to \infty$, the cross-category coupling presents the isolation of parameter blocks, rendering the joint Hessian matrix dense and making simultaneous optimization computationally intractable.
-\subsection{The Possion-Multinomial Equivalence (PME) Transformation}
+\section{The Possion-Multinomial Equivalence (PME) Transformation}
 To bypass this bottleneck, we exploit the Poisson-Multinomial Equivalence (PME) framework. Suppose the elements of the count vector are modeled as independent Poisson random variables, $y_{ijq}\sim \operatorname{Poisson}(\lambda_{ijq})$, where the latent intensity parameter $\lambda_{ijq}$ is parameterized multiplicatively via an individual-specific scaling intercept $\exp (\delta_{ij})$:
 \begin{equation}
     \lambda_{ijq}=\exp (\delta_{ij}+\eta_{ijq})=\exp(\delta_{ij})\exp(\eta_{ijq}).
@@ -106,7 +389,7 @@ The joint log-likelihood under this unconstrained Poisson regime is given by:
     \ell_{P}(\bm{\theta},\bm{\delta})=\sum_{j}\sum_{i\in \mathcal{I}_{j}}\sum_{q}\bigl\{y_{ijq}(\delta_{ij}+\eta_{ijq})-\exp (\delta_{ij}+\eta_{ijq})-\log y_{ijq}!\bigr\}.
 \end{equation}
 According to classical statistical theory, conditioning a set of independent Poisson variables on their empirical sum exactly reproduces the multinomial distribution. Formally, by imposing the structural constraint $\sum_{q=1}^Q y_{ijq} = y_{ij}$, we preserve an exact algebraic equivalence between the two likelihood fields up to a constant that is independent of the structural parameters $\bm{\theta}$. 
-\subsection{Analytical Profiling and Construction of $\delta_{ij}$}
+\section{Analytical Profiling and Construction of $\delta_{ij}$}
 Because the individual-specific intercepts $\bm{\delta}=\{\delta_{ij}\}$ enter the Poisson log-likelihood additively, they can be profiled out analytically observation by observation. Taking the first-order partial derivative of $\ell_{P}$ with respect to a specific nuisance parameter $\delta_{ij}$ yields the following score equation:
 \begin{equation}
     \frac{\partial \ell_{P}}{\partial \delta_{ij}}=\sum_{q}y_{ijq}-\sum_{q}\exp(\delta_{ij}+\eta_{ijq})=0.
@@ -124,7 +407,7 @@ Taking the natural logarithm on both sides yields the explicit structural formul
     \delta_{ij}=\log y_{ij+}-\log \sum_{q}\exp(\eta_{ijq}). 
 \end{equation}
 The utility of $\delta_{ij}$ is driven by the foundational intuition of the Frisch-Waugh-Lovell (FWL) theorem, which guarantees that nuisance parameters can be algebraically partialed out via orthogonal projections. Our algorithm operationalizes this ``partialing out" philosophy in a non-linear optimization field via profile-likelihood scaling simialrly done by \cite{Correia_2020}.
-\subsection{Justification as an Estimation Offset}
+\section{Justification as an Estimation Offset}
 The analytical derivation of $\delta_{ij}$ serves two vital purposes within our high-dimensional estimation strategy:
 \begin{itemize}
     \item Information Preserving Scaling: The term $\log y_{ij+}$ functions as an exposure control that directly scales the baseline Poisson intensity to match the idiosyncratic trial capacity of each individual. It mathematically captures the transition from binary indicator choice data to aggregated count data.
@@ -139,7 +422,7 @@ and the log-link function for the decoupled Poisson regression collapses to:
     \log (\lambda_{ijq})-\text{offset}_{ijq}=\mu_{q}+\zeta_{ijq}.
 \end{equation}
 This formulation structurally guarantees that the score equations for $\bm{\phi}_q$ and $\mu_q$ depend solely on category-specific variation. The $Q$-dimensional optimization problem is effectively partitioned into $Q$ independent, parallelizable, single-variable Poisson estimations, bypassing the high-dimensional denominator bottleneck entirely without losing any asymptotic statistical properties. 
-\subsection{Identifiability of Parameters}
+\section{Identifiability of Parameters}
 The loading matrix $\mathbf{B}$ is convenient for optimization and visualization but is not identifiable per se. Any orthogonal transformation $\mathbf{B} \mapsto \mathbf{BR}$ for orthodolody matrix $\mathbf{R}$ leads to the same model, since $\mathbf{BR}(\mathbf{BR})^\top = \mathbf{BB}^\top$. The identifiable quantity is therefore $\boldsymbol{\Sigma} = \mathbf{BB}^\top + \mathbf{D}$, which decomposes into a rank-$K$ component capturing cross-category co-variation driven by latent factors and a diagonal component $\mathbf{D} = \mathrm{diag}(d_1^2, \ldots, d_Q^2)$ capturing category-specific idiosyncratic variation not attributable to the latent factors. This decomposition distinguishes our model from \citet{chiquet2018variational}, who specify $\boldsymbol{\Sigma} = \mathbf{BB}^\top$ without the diagonal term. 
 
 Determine the matrices given $\bm{\Sigma}$ is a classic problem. \cite{Anderson1956StatisticalII} imposed a necessary condition for identification for $\mathbf{D}$ is that each column of loading matrix $\mathbf{B}$ has at least three nonzero elements. That requires the category number $p$ is greater than the latent factor number $k$ plus 2, which is satisfies automatically under the high-dimensional setup. Also, we assume that the diagonal entries of $\mathbf{D}$ are strictly positive, which avoids the Heywood case. The identification problem of $\mathbf{B}$ can be determined uniquely based on our assumption that the upper triangular entries of $\mathbf{B}$ are set to zero and the diagonal entries are positive.
@@ -147,8 +430,9 @@ Determine the matrices given $\bm{\Sigma}$ is a classic problem. \cite{Anderson1
 The inclusion of $\mathbf{D}$ offers two advantages. First, it yields a richer covariance structure: the pure low-rank specification forces all residual category-specific variance to be absorbed into the factor loadings, whereas $\mathbf{D}$ explicitly accounts for the heterogeneity in baseline variability across categories. Second, since $\mathbf{BB}^\top + \mathbf{D}$ is full-rank whenever $d_q^2 > 0$ for all $q$, the identifiability condition $Q \geq 2K + 1$ is more robustly satisfied than in the pure low-rank case. This structure corresponds exactly to the covariance decomposition of classical factor analysis \cite{Anderson1956StatisticalII}, in contrast to the PCA-type decomposition of \citet{chiquet2018variational}.
 
 Unlike standard PCA, there is no analogue of the \textbf{Eckart--Young} theorem for the Poisson exponential family, so orthogonality constraints on $\mathbf{B}$ would not yield computational simplifications. The lower-triangular constraint is therefore imposed purely for identifiability, not for computational convenience.
-
-\section{Regularized Expectation-Maximization Algorithm with PME Profiling}
+\end{comment}
+\begin{comment}
+\chapter{Regularized Expectation-Maximization Algorithm with PME Profiling}
 Let $\mathbf{B}=[\bm{b}_{1},\cdots, \bm{b}_{K}]$ denote the factor loading matrix, and define the structural parameter space of primary interest as $\Theta=\{\bm{\mu},\mathbf{B}, \mathbf{D}\}$, where $\mathbf{D}$ represents the diagonal matrix of unique variances. In this high-dimensional latent variable architecture, direct optimization of the marginal likelihood is highly non-convex and computationally prohibitive due to the unobserved nature of both the latent factor vectors $\bm{f}_j$ and the high-dimensional group-specific nuisance parameters (or fixed effects) $\bm{\delta}_j$. Leveraging the Poisson-Multinomial Equivalence (PME) framework, the sample marginal log-likelihood across the $J$ independent groups is formalized as:
 \begin{equation}
     h(\Theta, \bm{\delta}; \bm{y}_{1},\cdots,\bm{y}_{J}):=\dfrac{1}{J} \sum_{j=1}^{J} \log y_{\Theta, \bm{\delta}_j}(\bm{y}_{j}),
@@ -270,7 +554,7 @@ Following the union bound framework established in \cite{taddy2015distributed}, 
 
 By applying a union bound over the $Q$ independent score vectors, the stochastic error field is locked uniformly at the minimax rate $\mathcal{O}(\sqrt{\log Q / J})$. Finally, appealing to the localized contractive mapping of the regularized M-step under the RSC condition \cite{yi2015regularizedemalgorithmsunified}, the iteration sequence acts as a strict contraction mapping, compressing the optimization error into the statistical noise floor within $\mathcal{O}(\log(1/\epsilon))$ steps.
 \end{proof}
-
+\end{comment}
 
 
 

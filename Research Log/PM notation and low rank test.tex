@@ -45,48 +45,22 @@
 \chapter{Introduction}
 
 \chapter{Literature Review}
+ 
+High-dimensional multivariate count data with group structure arises across many modern applications. In computational linguistics, documents partition into authors or topics, and each document is a vocabulary-sized word-count vector \citep{Taddy_2015}. In micro-biome ecology, samples nest within subjects while the response be a vector of taxonomic abundances over hundreds of taxa \citep{Tu2023}. Despite their diversity, these settings share a common structure with $I$ observations in $J$ groups, whose individual observation is a count vector $\bm{y}_{ij} \in \mathbb{Z}^Q_{\geq 0}$ over $Q$ categories.
+ 
+The modeling challenge has two dimensions. The compositional aspect calls for the Multinomial distribution with a log-linear softmax link. The hierarchical aspect requires group-level random effects to capture dependence among observations from the same group. Ignoring this structure inflates Type~I error and introduces confounding bias in fixed-effect estimates \citep{Lee2019AnalysisOG}. The literature has addressed these two dimensions largely in isolation. The present work provides a synthesis suited to the large-$Q$ regime.
+ 
+The simplest approach treats observations as exchangeable and attributes all variation to measured covariates via Multinomial logistic regression. For large $Q$, direct Multinomial maximum likelihood is computationally prohibitive owing to the coupled softmax normalizer. \citet{10.2307/2348134} established the Poisson--Multinomial Equivalence (PME). Conditional on the total count $M_i$, the Multinomial likelihood factors can be separated into $Q$ independent Poisson log-linear models with a common additive offset $\xi_{ij}$. \citet{Taddy_2015} exploited this to propose Distributed Multinomial Regression (DMR) and applied it to large-vocabulary document classification. \citet{lee2017poissontrickextensionsfitting} subsequently formalized and extended the PME framework clarifying conditions under which it applies to a broad class of Multinomial regression models.
+ 
+DMR and standard MLR remain important baselines, but their central limitation is the absence of group-level random effects. When groups differ systematically, treating observations as exchangeable absorbs unmodeled group variation into fixed-effect estimates. For the large-$Q$ setting with high-dimensional fixed effects, \citet{Correia_2020} provides efficient Poisson estimation algorithms. Our work builds on this computational tradition while additionally modeling group-level structure.
+ 
+\citet{Aitchison_1989} introduced the Poisson Lognormal (PLN) distribution placing a Gaussian prior $\bm{Z}_i \sim \mathcal{N}(\bm{\mu}, \bm{\Sigma})$ on the log-linear predictors and drawing $Y_{ijq} \mid Z_{ijq} \sim \mathrm{Poisson}\bigl(\exp(Z_{iq})\bigr)$ independently. PLN captures between-category correlations and over-dispersion. However, they can not  estimate a full $Q\times Q$ covariance $\bm{\Sigma}$ in large $Q$ regime.
+ 
+\citet{chiquet2018variational} addressed this via PLN-PCA, which constraining $\bm{\Sigma} = \mathbf{CC}^\top$ with $\mathbf{C}\in\mathbb{R}^{Q\times K}$ and $K\ll Q$, then used variational EM with a mean-field Gaussian approximation. PLN-PCA imposes a low-rank factor covariance, who has the closest structural antecedent to our model. The key distinctions are that PLN-PCA operates at the observation level only and no group random effect. Also, they provided no large-$Q$ asymptotic theory.
+ 
+\citet{Tu2023} introduced logistic-normal multinomial (LNM) factor analyzers with a factor-structured observation-level covariance $\bm{\Sigma} = \mathbf{BB}^{\top} + \bm{\Psi}$, $\bm{\Psi} = \mathrm{diag}(\psi_1,\ldots,\psi_Q)$. The EM algorithm uses a variational Gaussian approximation in the E-step and the Rubin-Thayer iterations \citep{Rubin1982} in the M-step. Their LNM-FA shares the factor-analytic motivation of the present work, which point motivated our work targeting to structure a group-level random effect $\bm{\lambda}_j = \mathbf{B}\mathbf{f}_j + \bm{\epsilon}_j$, adopting the spherical simplification $\mathbf{D} = \sigma^2\mathbf{I}_Q$. 
 
-\section{Grouped Multivariate Count Data: The Challenge}
- 
-High-dimensional multivariate count data with group structure arises across many modern applications. In computational linguistics, documents partition into authors or topics,
-and each document is a vocabulary-sized word-count vector \citep{taddy2015document}.
-In microbiome ecology, samples nest within subjects, and the response is a vector of taxonomic abundances over hundreds of taxa \citep{Tu2023}. Despite their diversity, these settings share a common structure: $n$ observations affiliated with $J$ groups, each generating a count vector $\bm{y}_i \in \mathbb{Z}^Q_{\geq 0}$ over $Q$ categories.
- 
-The modelling challenge has two dimensions. The \emph{compositional} aspect calls for the Multinomial distribution with a log-linear softmax link. The \emph{hierarchical} aspect requires group-level random effects to capture dependence among observations from the same group; ignoring this structure inflates Type~I error and introduces confounding bias in fixed-effect estimates \citep{Lee2019AnalysisOG}. The literature has addressed these two dimensions largely in isolation. The present work provides a synthesis suited to the large-$Q$ regime.
- 
-\section{Multinomial Regression and the Poisson--Multinomial Equivalence}
- 
-The simplest approach treats observations as exchangeable and attributes all variation to measured covariates via Multinomial logistic regression. For large $Q$, direct Multinomial maximum likelihood is computationally prohibitive owing to the coupled softmax normaliser. \citet{10.2307/2348134} established the \emph{Poisson--Multinomial Equivalence} (PME): conditional on the total count $M_i$, the Multinomial likelihood factors into $Q$ independent Poisson log-linear models with a common additive offset $\xi_{ij}$. \citet{taddy2012estimation} exploited this to propose Distributed Multinomial Regression (DMR) for topic models, and \citet{taddy2015document} applied it to large-vocabulary
-document classification. \citet{lee2017poissontrickextensionsfitting} subsequently formalised and extended the PME framework, clarifying conditions under which it applies to a broad class of Multinomial regression models.
- 
-DMR and standard MLR remain important baselines, but their central limitation is the absence of group-level random effects. When groups differ systematically, treating observations as exchangeable absorbs unmodelled group variation into fixed-effect estimates. For the large-$Q$ setting with high-dimensional fixed effects, \citet{Correia_2020} provides efficient Poisson estimation algorithms; our work builds on this computational tradition while additionally modelling group-level structure.
- 
-\section{Poisson Lognormal Models: Latent Gaussian Structure}
- 
-\citet{aitchison1989multivariate} introduced the Poisson Lognormal (PLN) distribution, placing a Gaussian prior $\bm{Z}_i \sim \mathcal{N}(\bm{\mu}, \bm{\Sigma})$ on the log-linear predictors and drawing $Y_{iq} \mid Z_{iq} \overset{\mathrm{ind.}}{\sim} \mathrm{Poisson}(\exp(Z_{iq}))$. PLN captures between-category correlations and over-dispersion, but estimating a full $Q\times Q$ covariance $\bm{\Sigma}$ is infeasible for large $Q$.
- 
-\citet{chiquet2018variational} addressed this via PLN-PCA, constraining $\bm{\Sigma} = \mathbf{CC}^\top$ with $\mathbf{C}\in\mathbb{R}^{Q\times K}$ and $K\ll Q$, and using variational EM with a mean-field Gaussian approximation. PLN-PCA is the closest structural antecedent to our model: both impose a low-rank factor covariance. The key distinctions are that PLN-PCA operates at the \emph{observation} level (no group random effect), includes no idiosyncratic term (risking Heywood degeneracy, \citealt{heywood1931proof}), and provides no large-$Q$ asymptotic theory.
- 
-\section{Factor-Analytic Models for Compositional Data}
- 
-\citet{Tu2023} introduced logistic-normal multinomial (LNM) factor analysers with a factor-structured observation-level covariance $\bm{\Sigma} = \mathbf{BB}^{\top} + \bm{\Psi}$, $\bm{\Psi} = \mathrm{diag}(\psi_1,\ldots,\psi_Q)$. The EM algorithm uses a variational Gaussian approximation in the E-step and the Rubin-Thayer iterations \citep{Rubin1982} in the M-step.
- 
-LNM-FA shares the factor-analytic motivation of the present work. Three structural differences motivate our formulation. First, LNM-FA places the factor structure at the observation level, whereas we target the \emph{group} level: all observations in group $j$ share a common random effect $\bm{\alpha}_j = \mathbf{B}\mathbf{f}_j + \bm{\epsilon}_j$. This group-level structure is the appropriate mixed-effects specification when the group's latent profile is the inferential quantity of interest, and is directly motivated by the conjugate GLMM framework of \citet{Lee2019AnalysisOG}. Second, we adopt the spherical simplification $\mathbf{D} = \sigma^2\mathbf{I}_Q$, reducing the idiosyncratic component to a single scalar. This relaxes the identifiability condition from the classical Ledermann bound $(Q-K)^2 \geq Q+K$ \citep{ledermann1937rank} to the weaker $Q > K$: the covariance provides $Q(Q+1)/2$ equations while the PLT-constrained $\mathbf{B}$ and $\sigma^2$ have $QK - K(K-1)/2 + 1$ free parameters, with the gap always positive for $Q > K$ \citep[PLT constraint;][]{Anderson1956StatisticalII}. Third, LNM-FA provides no large-$Q$ asymptotic theory. The consistency rate $\|\hat{\mathbf{B}}-\mathbf{B}^*\|_F^2 = O_p(K/Q)$, established in Chapter~5, is, to our knowledge, the first such result for grouped multinomial factor models.
-
-\section{Inference: Laplace Approximation and EM}
-
-The intractable marginal likelihood $\int p(\bm{y}_j \mid \bm{\alpha}_j)\,p(\bm{\alpha}_j)\,d\bm{\alpha}_j$ requires approximation.
- 
-\paragraph{Variational inference.}
-Variational methods \citep{Blei03042017} lower-bound the log-likelihood and optimise over a tractable family. Both PLN-PCA \citep{chiquet2018variational} and LNM-FA \citep{Tu2023} use mean-field Gaussian approximations. For high-dimensional mixed models, \citet{Goplerud_2024} recently proposed a partially factorised variational family that retains some posterior correlations while remaining computationally scalable. A shared limitation of variational methods is that they optimise a lower bound rather than the exact marginal likelihood, complicating exact BIC-based model selection and potentially underestimating posterior variance \citep{Blei03042017}.
- 
-\paragraph{Laplace approximation.}
-The Laplace approximation \citep{Tierney01031986} replaces the posterior with a Gaussian at the mode, with precision $-\mathbf{H}(\hat{\bm{\alpha}}_j)$. \citet{Breslow_1993} established first-order consistency of Laplace-EM estimates in GLMMs. We embed this approximation within the EM algorithm of \citet{dempster1977maximum}, using the Laplace log-evidence as a monotone convergence criterion. The M-step factor decomposition uses the Rubin--Thayer algorithm \citep{Rubin1982}, with the ECME acceleration of \citet{article}
-available for further speed gains. The computational bottleneck, the $Q\times Q$ Newton solve in the E-step, is reduced from $O(Q^3)$ to $O(QK^2)$ in Chapter~4 via a novel PME auxiliary-variable construction combined with two applications of the Woodbury matrix identity.
- 
-\section{Positioning the Present Work}
-
-Relative to PLN-PCA, we add a group-level hierarchical structure, a spherical idiosyncratic term, and Laplace inference. Relative to LNM-FA, the principal advances are the group-level factor structure and the large-$Q$ consistency theory. Relative to DMR, we add group-level random effects with a factor prior; DMR is recovered as the special case $J = 1$, and the PME is extended from the M-step to the E-step as a novel auxiliary-variable device. Relative to conjugate GLMM approaches \citep{Lee2019AnalysisOG}, we impose a low-rank factor structure on the group-level covariance, enabling consistent estimation of $\mathbf{B}$ as $Q\to\infty$.
+Relative to PLN-PCA, we add a group-level hierarchical structure, a spherical idiosyncratic term, and Laplace inference. Relative to LNM-FA, the principal advances are the group-level factor structure and the large-$Q$ consistency theory. Relative to DMR, we add group-level random effects with a factor prior, thus DMR can be recovered as the special case when $J = 1$.
 
 \chapter{Model Specification}
 
@@ -214,15 +188,15 @@ with backtracking step size $s^{(t)}$ converges to the unique global maximum $\h
 
 \section{M-Step (a): Fixed Effects via Poisson GLMs}
 
-    With $\hat{\bm{\lambda}}_{j}$ fixed, recompute the PME offset:
+    With $\hat{\bm{\lambda}}_{j}$ fixed, recompute the Poisson-Multinomial Equivalence offset:
 \begin{equation}
     \xi_{ij}=\log y_{ij\cdot}-\log \sum_{q}\exp\bigl(\hat{\mu}_{q}+\bm{v}_{ij}^{\top}\hat{\bm{\phi}}_{q}+\hat{\lambda}_{jq}\bigr).
 \end{equation}
-    For $q=1,2,\dots,Q$, we solve the maximization independently:
+For $q=1,2,\dots,Q$, we solve the maximization problem independently:
     \begin{equation}
         (\hat{\mu}_{q}, \hat{\bm{\phi}}_{q})=\arg \max_{\mu_{q}, \bm{\phi}_{q}}\sum_{i}\bigl[y_{ijq}(\mu_{q}+\bm{v}_{ij}^{\top}\bm{\phi}_{q})-\exp (\mu_{q}+\bm{v}_{ij}^{\top}\bm{\phi}_{q}+\hat{\lambda}_{jq}+\xi_{ij})\bigr].
     \end{equation}
-    This is a Poisson log-linear regression with offset $\lambda_{jq}+\xi_{ij}$, solved by iteratively reweighted least squares. The Q problems are independent and may be parallelized. 
+This is a Poisson log-linear regression with offset $\lambda_{jq}+\xi_{ij}$, solved by iteratively reweighted least squares. The Q problems are independent and may be parallelized. 
 
 \section{M-Step (b): Factor Loadings and Idiosyncratic Variance}
 
@@ -278,42 +252,79 @@ Critically, $\hat{\bm{\Sigma}}_{\text{obs}}$ is fully determined by current Lapl
 \label{eq: Rubin4}
 \end{equation}
 The iterations  \ref{eq: Rubin1}-\ref{eq: Rubin4} are repeated to convergence. The PLT constraint \ref{eq: PLT} is enforced post-hoc via a QR decomposition of the top K rows of $\hat{\mathbf{B}}_{\text{new}}$, followed by sign correction to ensure positive diagonal entries and zeroing of the upper triangle. Applying PLT only after the Rubin–Thayer sub-iterations converge, rather than at each inner step, avoids the discontinuities that would otherwise disrupt convergence.
-    Given $\hat{\mathbf{B}}$ and $\hat{\sigma}^2$, the factor scores are recovered by the Bayes linear estimator:
+    Given $\hat{\mathbf{B}}$ and $\hat{\sigma}^2$, the factor scores are recovered by the Bayes linear estimator (\citet{Gelman2013}):
 \begin{equation}
-\hat{\mathbf{f}}_j = \left( \mathbf{I}_K + \frac{1}{\hat{\sigma}^2} \hat{\mathbf{B}}^\top \hat{\mathbf{B}} \right)^{-1} \frac{1}{\hat{\sigma}^2} \hat{\mathbf{B}}^\top \hat{\boldsymbol{\lambda}}_j,
+\hat{\mathbf{f}}_j = \left( \mathbf{I}_K + \frac{1}{\hat{\sigma}^2} \hat{\mathbf{B}}^\top \hat{\mathbf{B}} \right)^{-1} \frac{1}{\hat{\sigma}^2} \hat{\mathbf{B}}^\top \hat{\boldsymbol{\lambda}}_j ,
+\label{eq: Bayeslinearestimator}
 \end{equation}
 requiring only $K\times K$ inversion via Woodbury identity.
 
-\section{Simulation Results}
+\chapter{Results}
 
+\section{Simulated Results}
+We evaluate the proposed Laplace-EM algorithm on a synthetic dataset drawn from the model specified in Chapter~3. The data-generating process uses $J = 30$ groups, $N = 800$ total observations, $Q = 50$ categories, $K = 2$ latent factors, $P = 2$ covariates, and $\sigma^2_{\mathrm{true}} = 0.3$. The true factor loading matrix $\mathbf{B}^*$ is constructed in positive lower-triangular (PLT) form with diagonal entries drawn from $\mathrm{Uniform}(0.5,\,1.2)$ and sub-diagonal entries from $\mathcal{N}(0,\,0.36)$. Group-level factors are generated as $\mathbf{f}_j^* \sim \mathcal{N}(0, I_K)$ independently.
 
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Rplottest1.pdf}
-        \caption{True loading matrix}
+        \caption{Log-lik Convergence}
         \label{fig:Basictest1}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Rplottest2.pdf}
-        \caption{Estimated loading matrix}
+        \caption{Random effect Recovery}
         \label{fig:Basictest2}
     \end{subfigure}
-
-    \caption{Comparison of true and estimated loading matrices}
-    \label{fig:comparison}
 \end{figure}
+
+Figure~\ref{fig:Basictest1} displays the Laplace log-evidence $\log\tilde{p}(\bm{y}\mid\bm{\theta})$ over EM iterations. The sequence is strictly monotone throughout, with zero violations of the monotonicity criterion (we set the threshold to be $10^{-6}$), consistent with the theoretical guarantee that each EM cycle increases the observed-data marginal log-likelihood under the Laplace approximation.
+
+Figure~\ref{fig:Basictest2} shows side-by-side heatmaps of $\bm{\lambda}_{j}^*$ and $\hat{\bm{\lambda}}_{j}$. The PLT structure and the dominant loading pattern are faithfully recovered. The group-level random effects $\{\bm{\lambda}_j\}$ are recovered with mean Pearson correlation across all $J=30$ groups (Figure~\ref{fig: Basictest4}), with no groups yielding negative correlations, confirming that the Laplace E-step reliably locates the posterior mode even under the high-dimensional multinomial likelihood.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Rplottest4.pdf}
+    \caption{$\mathbf{f}_{j}$ Recovery via Procrustes alignment}
+    \label{fig: Basictest4}
+\end{figure}
+
+Factor scores are identifiable only up to an orthogonal rotation, so Procrustes alignment is assessed in $\mathbf{f}_{j}$ check. Let the orthogonal matrix $\mathbf{R} = \mathbf{UV}^\top$ where $\mathbf{F}^* \hat{\mathbf{F}}^\top = \mathbf{UDV}^\top$, then evaluate $\hat{\mathbf{F}}_{\mathrm{aligned}} = \mathbf{R}\hat{\mathbf{F}}$. After alignment, Factor~1 achieves $r = 0.985$ and Factor~2 achieves $r = 0.997$ (Figure~\ref{fig:Basictest4}), confirming that the latent factor structure is correctly identified. The relative Frobenius error of $0.34$ reflects systematic posterior shrinkage inherent to the Bayes linear estimator \ref{eq: Bayeslinearestimator}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{Rplottest3.pdf}
-    \caption{Factor loading matrix estimate}
+    \caption{Boxplots of Parameters' Estimation}
     \label{fig: Basictest3}
 \end{figure}
 
+Figure~\ref{fig: Basictest3} reports results across 20 independent replications under the same data-generating process with different random seeds. The subspace distance $d_{\mathrm{sub}}(\hat{\mathbf{B}},\mathbf{B}^*)$, the idiosyncratic variance estimate $\hat{\sigma}^2$, and the mean group correlation $\bar{r}$ are all stable across seeds, demonstrating that the algorithm is insensitive to random initialization and data realization.
+
+\section{Real Data Estimation}
+In this section, we apply the proposed algorithm to the dataset ``dietswap" in microbiome R package \citep{Lahti2017}. The study recruited 38 healthy subjects from two populations, Finnish and African, and collected multiple stool samples from each subject across timepoints during a controlled diet-swap intervention. This yields a grouped multivariate count structure with $I = 222$ observations nested within $J = 38$ subjects. The response is a vector of read counts over $Q_{\mathrm{raw}} = 130$ operational taxonomic units (OTUs). The multiple observations in this dataset share a common group-level random effect, which satisfies the structural assumption of our model.
+
+We retain taxa present in at least 5 samples to avoid inflation. The total read count per sample, $y_{ij\cdot} = \sum_q y_{ijq}$, ranges from 1776 to 28883. A single binary covariate nationality ($x_i = 1$ for African, $x_i = 0$ for Finnish) is included, giving $P = 2$ (intercept plus nationality). Groups are defined by subject identity, so all samples from the same subject share a common group-level random effect $\bm{\lambda}_j$.
+
+We fit the model with $K = \{2,3,4\}$  latent factors. $K=3$ has the best performance that converged at iteration 49 (with tolerance $10^{-4}$) out of a maximum of 120 iterations, while $K=2$ and $K=4$ do not converged in 120 iterations. Figure~\ref{fig:microtest2} shows the overall posterior predictive pseudo-$R^2$ computed as the squared Pearson correlation between observed and predicted counts across all samples and taxa, which is 0.7846. Figure~\ref{fig:microtest1} shows the separation...
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Rplotmicrotestoverallpseudo.pdf}
+    \caption{Overall Pseudo $R^2$ when $K=3$}
+    \label{fig:microtest2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Rplotmicrofactorscores.pdf}
+    \caption{Factor Scores while $K=3$}
+    \label{fig:microtest1}
+\end{figure}
+
+\begin{comment}
 \chapter{Acceleration}
 
 \section{Motivation: The Hessian Bottleneck Revisited}
@@ -340,7 +351,7 @@ with the definition \ref{eq: individualcovariate} of $\eta_{ijq}$ given in \ref{
 
 \subsection{Profile Likelihood Equivalence}
 The auxiliary variables $\bm{\xi}_{j}$ are introduced purely for computational convenience.
-
+\end{comment}
 
 
 
@@ -559,4 +570,5 @@ By applying a union bound over the $Q$ independent score vectors, the stochastic
 
 
 \bibliography{reference}
+
 \end{document}

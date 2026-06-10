@@ -168,7 +168,7 @@ algorithm2_fit <- function(y_mat, w_mat, K = 2,
     for (j in seq_len(J)) {
       o       <- nr_mode_f(rep(0, K), y_mat[j,], w_mat[j,], mu, B, d2)
       Fm[j,]  <- o$f_hat
-      Hinv[[j]] <- tryCatch(solve(-o$H),           
+      Hinv[[j]] <- tryCatch(solve(o$H),           
                             error = function(e) diag(K))
     }
 
@@ -275,13 +275,13 @@ simulate_algo2_dataset <- function(J = 60, Q = 12, K = 3, w_const = 5,
 }
 
 run_algo2_demo <- function() {
-  dat <- simulate_algo2_dataset(J = 60, Q = 12, K = 3, seed = 7)
+  dat <- simulate_algo2_dataset(J = 300, Q = 12, K = 1, seed = 7)
   fit <- algorithm2_fit(
     dat$y_mat, dat$w_mat,
     K = 3, lambda0 = 0.35, kappa = 0.92, Delta = 0.06,
     max_iter = 80, trace = TRUE, verbose = TRUE
   )
-  plot_algorithm2_convergence(fit)
+  # plot_algorithm2_convergence(fit)
   invisible(list(dat = dat, fit = fit))
 }
 
@@ -292,6 +292,6 @@ run_algo2_demo_no_penalty <- function() {
     K = 3, lambda0 = 0, kappa = 0.92, Delta = 0,
     max_iter = 80, trace = TRUE, verbose = TRUE
   )
-  plot_algorithm2_convergence(fit)
+  # plot_algorithm2_convergence(fit)
   invisible(list(dat = dat, fit = fit))
 }
